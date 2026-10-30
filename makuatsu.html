@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="塗膜厚測定">
+<meta name="theme-color" content="#1f5fa8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>塗膜厚測定検査記録</title>
+<style>
+:root{
+  --ink:#1b2430; --sub:#5b6675; --line:#9aa5b1; --lineL:#d5dbe1;
+  --bg:#eef1f4; --paper:#fff; --accent:#1f5fa8; --accentL:#e3edf8;
+  --ok:#1e7d3a; --okL:#e2f3e6; --ng:#c62828; --ngL:#fde4e4; --cur:#ffe58a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+  -webkit-text-size-adjust:100%}
+.sheet{max-width:1240px;margin:10px auto 130px;background:var(--paper);padding:18px 20px 22px;
+  box-shadow:0 1px 4px rgba(0,0,0,.12);border-radius:6px}
+table{border-collapse:collapse;width:100%}
+td,th{border:1px solid var(--line);padding:0;font-size:14px}
+th{background:#f3f5f7;font-weight:600;padding:4px 6px;white-space:nowrap}
+input,select{font:inherit;color:inherit;border:0;background:transparent;width:100%;padding:7px 6px;outline:none;border-radius:0}
+input:focus,select:focus{background:var(--accentL)}
+h2{font-size:14px;margin:12px 0 5px;padding-left:8px;border-left:4px solid var(--accent)}
+
+/* head */
+.head{display:flex;align-items:flex-end;gap:16px;margin-bottom:8px}
+.head h1{flex:1;font-size:24px;text-align:center;letter-spacing:.3em;margin:0;font-weight:700;
+  text-decoration:underline;text-underline-offset:6px}
+.stamp{width:auto;flex:none}
+.stamp th{width:110px;font-size:13px}
+.stamp td{height:58px;vertical-align:bottom}
+.stamp td input{text-align:center;font-size:13px;padding:4px}
+
+.info th{padding:2px 6px}
+.info td input,.info td select{padding:4px 6px}
+.top{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.infos{display:grid;grid-template-columns:1.25fr 1fr;gap:0}
+.info2{margin-left:-1px;width:calc(100% + 1px)}
+.info th{width:96px}
+.ftop{display:flex;flex-direction:column}
+.ftop .formula{flex:1;display:flex;flex-direction:column;justify-content:center}
+.fh2{margin-top:0!important}
+.datecell{position:relative}
+#dateTxt{display:block;padding:4px 6px;min-height:1.6em}
+.dateIn{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.unit{display:flex;align-items:center}
+.unit input{flex:1;text-align:right}
+.unit span{padding:0 8px 0 2px;color:var(--sub);font-size:13px;white-space:nowrap}
+.hyojun input{font-weight:400;color:var(--accent);font-size:16px}
+
+/* body: 2 columns */
+.body{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;margin-top:4px}
+.main{order:-1}
+.h2sub{font-weight:400;font-size:12px;color:var(--sub);margin-left:10px}
+.h2sub input{width:56px;border:1px solid var(--lineL);border-radius:4px;padding:2px 4px;text-align:right;font-size:12px}
+.freq td,.freq th{text-align:center;font-variant-numeric:tabular-nums}
+.freq td{padding:3px 4px}
+.freq td.cls{white-space:nowrap}
+.freq td.tally{text-align:left;padding-left:10px;letter-spacing:1px;font-family:ui-monospace,Menlo,monospace;width:38%}
+.freq tfoot th,.freq tfoot td{background:#f3f5f7;font-weight:700}
+.freq tr.low td{color:#000}
+.histbox{border:1px solid var(--lineL);border-radius:4px}
+#hist{width:100%;height:100%;min-height:260px;display:grid;grid-template-columns:34px 1fr;grid-template-rows:1fr auto auto;padding:18px 10px 6px 0;box-sizing:border-box}
+.hempty{grid-column:1/3;align-self:center;text-align:center;color:#9aa5b1;font-size:13px}
+.hyl{align-self:center;text-align:center;font-weight:600;font-size:12px;line-height:1.25}
+.hplot{position:relative;margin-left:22px;border-left:1px solid #5b6675;border-bottom:1px solid #5b6675}
+.hyax{position:absolute;inset:0}
+.hg{position:absolute;left:0;right:0;border-top:1px solid #eceff2}
+.hy{position:absolute;left:-24px;width:20px;text-align:right;font-size:11px;color:#7a8592;transform:translateY(50%)}
+.hbars{position:absolute;inset:0;display:flex;align-items:flex-end}
+.hc{flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center}
+.hb{width:70%;background:#5b8fd0;border-radius:2px 2px 0 0;position:relative}
+.hb.low{background:#d64545}
+.hb span{position:absolute;left:0;right:0;top:-16px;text-align:center;font-size:11.5px;font-weight:700}
+.hxl{display:flex;margin-left:22px}
+.hx{flex:1;text-align:center;font-size:9.5px;line-height:1.15;color:#5b6675;padding-top:3px;white-space:nowrap;overflow:hidden}
+.hxt{text-align:center;font-size:11px;font-weight:600;margin-left:22px;padding-top:2px}
+.side{display:flex;flex-direction:column}
+.histbox{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.jrow{display:flex;gap:10px;align-items:center}
+.jrow .crit{flex:1}
+.jrow .judge{flex-direction:column;gap:4px;margin:0}
+.jsub{font-size:11px;color:var(--sub);white-space:nowrap}
+
+.grid th{font-size:12.5px;padding:3px 4px}
+.grid td{text-align:center}
+.grid .no{width:38px;background:#f8f9fa;font-weight:600}
+.grid .pos{width:20%}
+.grid .pos input{font-size:13px;padding:5px 4px}
+.grid .m input{text-align:center;font-size:17px;font-variant-numeric:tabular-nums;padding:5px 2px}
+.grid .m.cur{outline:3px solid #e0a800;outline-offset:-3px;background:var(--cur)}
+.grid .avg{width:72px;font-weight:400;font-variant-numeric:tabular-nums;background:#f8f9fa}
+.grid .avg.low{color:var(--ng);background:var(--ngL)}
+.grid .mk{width:36px;font-weight:700}
+.grid .mk.ok{color:var(--ok)} .grid .mk.ng{color:var(--ng)}
+
+.crit td{padding:5px 8px}
+.crit .v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.res-ok,.res-ng,.res-na{font-weight:700;text-align:center;width:58px}
+.res-ok{color:var(--ok)} .res-ng{color:var(--ng)} .res-na{color:var(--sub);font-weight:400}
+.judge{display:flex;align-items:center;justify-content:center;gap:16px}
+.badge{font-size:22px;font-weight:800;padding:6px 26px;border-radius:6px;border:3px solid;letter-spacing:.2em}
+.badge.ok{color:var(--ok);border-color:var(--ok);background:var(--okL)}
+.badge.ng{color:var(--ng);border-color:var(--ng);background:var(--ngL)}
+.badge.na{color:var(--sub);border-color:var(--lineL);background:#f6f7f8}
+.formula{border:1px solid var(--line);padding:8px 12px;font-size:15px}
+.frow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:3px 0}
+.flbl{width:64px;font-weight:600;font-size:13px}
+.frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.15;font-size:.9em}
+.frac>span:first-child{border-bottom:1.3px solid currentColor;padding:0 3px}
+.frac>span:last-child{padding:0 3px}
+.sig{display:inline-flex;flex-direction:column;align-items:center;line-height:1}
+.sig b{font-size:1.5em;font-weight:400}
+.sig small{font-size:.62em}
+.sqrt{display:inline-flex;align-items:stretch}
+.rad{font-size:2.1em;line-height:1;transform:scaleX(.9);margin-right:-1px}
+.rin{display:inline-flex;align-items:center;gap:5px;padding:0 2px}
+.brk{font-size:2.3em;font-weight:200;line-height:1;transform:scaleX(.7)}
+.fval{margin-left:auto;font-variant-numeric:tabular-nums}
+.fval b{color:var(--accent);font-weight:400}
+.fdef{font-size:12px;color:var(--sub);margin-top:2px}
+.note{font-size:11.5px;color:var(--sub);line-height:1.6;margin-top:8px}
+
+/* toolbar */
+.toolbar{max-width:1240px;margin:10px auto 0;display:flex;gap:8px;flex-wrap:wrap;padding:0 4px}
+.btn{font:inherit;font-size:15px;border:1px solid var(--line);background:#fff;color:var(--ink);
+  padding:9px 14px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--ng);border-color:#e6b0b0}
+.saved{margin-left:auto;align-self:center;font-size:12px;color:var(--sub)}
+.help{max-width:1240px;margin:8px auto 0;font-size:12.5px;color:var(--sub);padding:0 6px;line-height:1.6}
+
+/* voice dock */
+.dock{position:fixed;left:0;right:0;bottom:0;background:rgba(27,36,48,.96);color:#fff;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;z-index:10}
+.mic{width:64px;height:64px;border-radius:50%;border:0;background:#2e7cd6;color:#fff;font-size:28px;flex:none;cursor:pointer}
+.mic.on{background:#d33;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(221,51,51,.6)}100%{box-shadow:0 0 0 16px rgba(221,51,51,0)}}
+.dinfo{flex:1;min-width:0}
+.dpos{font-size:15px;color:#cfd8e3}
+.dpos b{color:#ffe58a;font-size:20px}
+.dheard{font-size:14px;color:#9fb0c3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.dlast{font-size:30px;font-weight:800;min-width:90px;text-align:right;font-variant-numeric:tabular-nums}
+.dbtn{font:inherit;font-size:14px;background:#3a4756;color:#fff;border:0;border-radius:8px;padding:10px 12px;cursor:pointer}
+
+/* iPad portrait / narrow: stack */
+@media (max-width:980px){
+  .body{grid-template-columns:1fr}
+  .main{order:-1}
+  .top{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .sheet{padding:12px 8px}
+  .infos{grid-template-columns:1fr}
+}
+
+/* ===== print: A4 landscape, 1 page ===== */
+@media print{
+  @page{size:A4 landscape;margin:17mm 9mm 6mm 9mm}
+  html,body{background:#fff}
+  .toolbar,.dock,.help{display:none!important}
+  .sheet{box-shadow:none;margin:0;padding:0;max-width:none;border-radius:0}
+  ::placeholder{color:transparent}
+  input,select{-webkit-appearance:none;appearance:none}
+  input::-webkit-calendar-picker-indicator{display:none}
+  td,th{font-size:11px}
+  th{padding:2px 5px}
+  .head{margin-bottom:5px;gap:10px}
+  .head h1{font-size:20px;text-underline-offset:5px}
+  .info td input,.info td select,#dateTxt{padding:1.5px 5px}
+  .info th{padding:1px 5px}
+  .dateIn{display:none}
+  .info td{font-size:11px}
+  .unit span{font-size:10px}
+  .hyojun input{font-size:13px}
+  .body{grid-template-columns:1.45fr 1fr;gap:12px;margin-top:2px}
+  .top{grid-template-columns:1.45fr 1fr;gap:12px}
+  .infos{grid-template-columns:1.25fr 1fr;gap:0}
+  .info th{width:70px}
+  .main{order:-1}
+  h2{font-size:11.5px;margin:6px 0 3px}
+  .grid th{font-size:10px;padding:1px 2px}
+  .grid td input{padding:2px 1px!important}
+  .grid .m input{font-size:12px}
+  .grid .pos input{font-size:10px}
+  .grid .m.cur{outline:0;background:transparent}
+  .grid .avg,.grid .no{background:transparent!important}
+  .crit td,.crit th{padding:3px 6px}
+  .badge{font-size:16px;padding:3px 18px;border-width:2px}
+  .note{font-size:8.5px;line-height:1.45;margin-top:4px}
+  .formula{font-size:12.5px;padding:3px 8px}
+  .frow{padding:1px 0;gap:4px}
+  .flbl{width:52px;font-size:10.5px}
+  .fdef{font-size:8.5px;margin-top:0}
+  .freq td{padding:0 3px;font-size:9.5px;line-height:1.1}
+  .freq th{font-size:9.5px}
+  .h2sub{font-size:9px}
+  .h2sub input{border:0;width:28px;font-size:9.5px;padding:0}
+  .histbox{flex:1 1 0;position:relative;min-height:70px}
+  .freq.dense td{font-size:9px;line-height:1.05}
+  #hist{position:absolute;inset:0;min-height:0;padding:14px 8px 3px 0}
+  .hx{font-size:8px}
+  .hy,.hb span{font-size:9.5px}
+  .hb span{top:-13px}
+  .hyl,.hxt{font-size:10px}
+  .jsub{font-size:8.5px}
+  .badge{font-size:14px;padding:2px 12px}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+/* ---- 画面切替 ---- */
+.tabs{max-width:1240px;margin:10px auto 0;display:flex;gap:6px;padding:0 4px}
+.tabs button{flex:1;font:inherit;font-size:16px;font-weight:600;padding:12px 8px;border:1px solid var(--line);
+  background:#fff;color:var(--ink);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.infoPanel{max-width:1240px;margin:12px auto 140px;background:#fff;border-radius:8px;padding:20px 22px;box-shadow:0 1px 4px rgba(0,0,0,.12);display:none}
+.ip-h{margin-top:0}
+.ip-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 22px}
+.ip-grid label{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600;color:#000}
+.ip-grid input{font-size:18px;font-weight:400;border:1px solid var(--line);border-radius:8px;padding:11px 12px;background:#fff;min-height:48px}
+.ip-grid input:focus{border-color:var(--accent);background:var(--accentL)}
+.ip-grid label.em input{font-weight:700;font-size:20px}
+.ip-foot{display:flex;align-items:center;gap:16px;margin-top:20px;flex-wrap:wrap}
+.ip-note{flex:1;font-size:13px;color:var(--sub)}
+.btn.big{font-size:17px;padding:13px 26px}
+.ctx{max-width:1240px;margin:8px auto 0;padding:8px 12px;background:#fff;border-radius:8px;font-size:14px;display:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.ctx b{margin-right:4px} .ctx span{margin-right:18px;white-space:nowrap}
+body.m-info .sheet,body.m-info .toolbar,body.m-info .mhelp,body.m-info .dock{display:none}
+body.m-info .infoPanel{display:block}
+body.m-measure .sheet .top,body.m-measure .sheet .head{display:none}
+body.m-measure .ctx{display:block}
+body.m-sheet .dock,body.m-sheet .mhelp{display:none}
+body:not(.m-sheet) .pdfbtn{display:none}
+body.m-sheet .sheet{margin-bottom:30px}
+@media (max-width:700px){ .ip-grid{grid-template-columns:1fr} }
+@media print{
+  .tabs,.infoPanel,.ctx{display:none!important}
+  body .sheet{display:block!important}
+  body .sheet .top{display:grid!important}
+  body .sheet .head{display:flex!important}
+}
+.ip-grid select{font:inherit;font-size:18px;font-weight:400;border:1px solid var(--line);border-radius:8px;padding:11px 12px;background:#fff;min-height:48px;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,#555 50%),linear-gradient(135deg,#555 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat}
+.rolesel select{font-size:14px;font-weight:600;min-height:0;padding:3px 26px 3px 8px;border-radius:6px;background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px}
+.sysEd{margin-top:22px;border-top:1px solid var(--lineL);padding-top:12px}
+.sysEd summary{font-weight:700;font-size:15px;cursor:pointer;padding:6px 0}
+.se-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.se-top label{font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px}
+.se-top input{font-size:16px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:260px}
+.seTbl td input{font-size:16px;padding:8px}
+.seTbl td.n input{text-align:right}
+.seTbl tfoot td{padding:6px 8px;font-weight:700;text-align:right}
+.se-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.se-note{font-size:12.5px;color:var(--sub);line-height:1.6}
+/* ---- 測定／社検・品確／立会 ---- */
+:root{--roleC:#c62828;--witC:#1f5fa8}
+.grid th.sub{font-size:11px;font-weight:400;padding:2px 1px}
+.grid .g0{border-left:1px solid var(--line)}
+.grid .m input{font-size:15px;padding:5px 0}
+.grid .tot,.grid .avgx{font-variant-numeric:tabular-nums;font-size:13px}
+.grid .tot.km{font-weight:400}
+.grid .pos{width:11%}
+.grid .avg{width:auto}
+.dk{display:inline-block;font-size:13px;font-weight:700;padding:1px 8px;border-radius:10px;margin-left:6px;background:#fff;color:#000}
+.grid{table-layout:fixed}
+.grid input{min-width:0;width:100%;box-sizing:border-box}
+.grid col.c-no{width:34px} .grid col.c-pos{width:18%}
+.grid col.c-tot{width:4.6%} .grid col.c-avg{width:4.8%}
+.grid td.tot,.grid td.avg,.grid td.avgx{padding:0 1px;white-space:nowrap;overflow:hidden}
+.grid .pos input{text-overflow:ellipsis}
+/* ②測定値入力：表を全幅、集計は下に */
+body.m-measure .body{grid-template-columns:1fr}
+@media print{
+  .body,.top{grid-template-columns:2.8fr 1fr!important}
+  .crit th{font-size:9.5px;padding-left:.6em!important;white-space:nowrap}
+  .crit td{font-size:9.5px;white-space:nowrap;padding:3px 4px!important}
+  .res-ok,.res-ng,.res-na{width:38px}
+  .formula{font-size:11px}
+  .grid col.c-no{width:20px}
+  .grid th.sub{font-size:7.5px;padding:0;letter-spacing:-.5px}
+  .grid th{font-size:9px}
+  .grid .m input{font-size:9.5px;padding:0.8px 0!important;letter-spacing:-.3px}
+  .grid td.tot,.grid td.avg,.grid td.avgx{font-size:8.5px;letter-spacing:-.3px}
+  .grid .pos input{font-size:8px}
+  .freq td.tally{width:30%}
+}
+/* ---- 欄の表示切替・文字の自動縮小 ---- */
+.colopt{font-size:13px;font-weight:400;display:inline-flex;gap:12px;align-items:center}
+.colopt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.colopt input{width:20px;height:20px}
+body:not(.m-measure) .colopt{display:none}
+body.hide-s .grid .ks,body.hide-w .grid .kw{display:none}
+body.hide-s.hide-w .grid tr.subrow{display:none}
+.fit{container-type:inline-size;width:100%}
+.grid .m{--base:15px}
+.grid .pos{--base:13px}
+.grid input.fitin{font-size:min(var(--base),calc((100cqi - var(--pad,2px)) / var(--n,3)))}
+.grid .pos input.fitin{--pad:10px}
+@media print{
+  .colopt{display:none!important}
+  .grid .m{--base:9.5px}
+  .grid .pos{--base:8.5px}
+  .grid .pos input.fitin{--pad:4px}
+  .grid .m input,.grid .pos input{font-size:min(var(--base),calc((100cqi - var(--pad,2px)) / var(--n,3)))!important}
+}
+.grid .fitv{display:block;white-space:nowrap;text-align:center;font-size:min(var(--base),calc((100cqi - 2px) / var(--n,3)))}
+.grid td.tot,.grid td.avg,.grid td.avgx{--base:14px}
+.grid col.c-pos{width:18%}
+@media print{ .grid td.tot,.grid td.avg,.grid td.avgx{--base:9.5px} .grid .fitv{font-size:min(var(--base),calc((100cqi - 2px) / var(--n,3)))!important} }
+.freq td.tally{white-space:nowrap;overflow:hidden;letter-spacing:0}
+.ip-grid input:disabled{background:#eef0f2;border-style:dashed}
+body.m-sheet .histbox{flex:1 1 0;position:relative;min-height:120px}
+body.m-sheet #hist{position:absolute;inset:0;min-height:0}
+body.m-sheet .sheet input,body.m-sheet .sheet select,body.m-sheet .datecell{pointer-events:none}
+body.m-sheet .sheet input:focus{background:transparent}
+.rohint{display:none;max-width:1240px;margin:8px auto 0;padding:0 6px;font-size:13px;color:var(--sub)}
+body.m-sheet .rohint{display:block}
+@media print{.rohint{display:none!important}}
+body.m-sheet .grid .m.cur{outline:0;background:transparent}
+body.m-sheet .noro{display:none}
+body.m-sheet .sheet ::placeholder{color:transparent}
+.grid td.dev{--base:14px;padding:0 1px}
+.grid th.dvh{font-size:11px;padding:2px 1px;white-space:nowrap}
+@media print{ .grid td.dev{--base:9.5px} .grid th.dvh{font-size:8px} }
+.badge,.judge>span{white-space:nowrap}
+.fval{white-space:nowrap}
+@media print{
+  .formula{font-size:10px!important;padding:3px 6px}
+  .frow{flex-wrap:nowrap;gap:3px}
+  .flbl{width:44px;font-size:9px}
+}
+@media screen and (min-width:981px){
+  body.m-sheet .body,body.m-sheet .top{grid-template-columns:2.8fr 1fr}
+  body.m-sheet .formula{font-size:13px}
+  body.m-sheet .frow{flex-wrap:nowrap;gap:4px}
+}
+h2.jh{display:flex;align-items:center;gap:10px}
+h2.jh .judge{margin-left:auto;gap:10px;font-size:14px}
+h2.jh .badge{font-size:18px;padding:2px 18px;border-width:2px}
+@media print{ h2.jh{margin-top:6px} h2.jh .judge{font-size:11px} h2.jh .badge{font-size:13px;padding:1px 14px} }
+.bikoFoot th.bk-h{vertical-align:middle;border-top:1px solid var(--line)}
+.bikoFoot tr:first-child td{border-top:1px solid var(--line)}
+.bikoFoot td.bk{text-align:left;padding:0 6px;display:table-cell!important}
+.bikoFoot .bk-row{display:flex;align-items:center}
+.bikoFoot .bk-lbl{flex:none;font-size:12px;padding:6px 8px 0 0;color:#000;white-space:nowrap}
+.bikoFoot .bk-in{display:block;flex:1;width:100%;font-size:14px;padding:5px 2px;text-align:left}
+.bikoFoot td.bk input{min-width:0}
+@media print{
+  .bikoFoot .bk-lbl{font-size:8.5px;padding-top:0}
+  .bikoFoot .bk-in{font-size:9px;padding:0.5px 2px!important}
+  .bikoFoot th.bk-h{font-size:10px}
+}
+@media print{
+  .grid td input{padding:0.5px 1px!important;line-height:1.15}
+  .grid td.no{font-size:9.5px;line-height:1.1}
+  .grid td{line-height:1.1}
+  .grid .fitv{line-height:1.15}
+}
+math.fm{font-size:1.25em;math-style:normal;font-family:"STIX Two Math","Cambria Math","Latin Modern Math",math,serif}
+math.fm mi,math.fm mn,math.fm mo{font-weight:400}
+.formula .frow{padding:4px 0}
+@media print{ math.fm{font-size:1.2em} }
+.uiov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.uibox{background:#fff;border-radius:12px;padding:22px 22px 16px;max-width:420px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.uimsg{font-size:16px;line-height:1.6;color:#000;margin-bottom:18px}
+.uibtns{display:flex;gap:10px;justify-content:flex-end}
+.btn.danger-fill{background:var(--ng);border-color:var(--ng);color:#fff}
+.uitoast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#1b2430;color:#fff;padding:12px 18px;border-radius:10px;font-size:15px;z-index:101;white-space:pre-line;max-width:90vw;transition:opacity .4s}
+.uitoast.out{opacity:0}
+@media print{.uiov,.uitoast{display:none!important}}
+.grid th .hfit{--base:11px;line-height:1.2}
+.grid th.sub,.grid th.dvh{padding:2px 1px;overflow:hidden}
+.grid th .hfit sup{font-size:.7em;line-height:0}
+@media print{ .grid th .hfit{--base:8px} .grid th.sub,.grid th.dvh{padding:0 1px;letter-spacing:0} }
+.tenkey{display:none;position:fixed;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:11;
+  grid-template-columns:repeat(4,64px);grid-auto-rows:56px;gap:6px;padding:10px;background:rgba(27,36,48,.96);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+body.m-measure.tk-on .tenkey{display:grid}
+.tenkey button{font:inherit;font-size:24px;border:0;border-radius:10px;background:#f4f6f8;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.tenkey button:active{background:#ffe58a}
+.tenkey button.fn{font-size:16px;background:#cfd8e3}
+.tenkey button.ent{grid-row:span 2;background:#2e7cd6;color:#fff;font-size:17px;line-height:1.3}
+.tenkey button.ent:active{background:#1f5fa8}
+.tenkey button.z{grid-column:span 2}
+.dbtn.on{background:#2e7cd6}
+body.tk-on.m-measure .sheet{margin-bottom:340px}
+@media print{.tenkey{display:none!important}}
+/* 文字は基本 黒 */
+.sheet{color:#000}
+.sheet th,.sheet td,.sheet input,.sheet select,.h2sub,.unit span,.hyojun input,.fval b,
+.res-ok,.res-na,.badge.ok,.badge.na,.hy,.hx,.hxt,.hyl,.hempty,.freq td,.grid .avg{color:#000}
+.sheet .grid .ks input,.sheet .grid td.ks,.sheet .grid th.ks,.dk-s{color:var(--roleC)}
+.sheet .grid .kw input,.sheet .grid td.kw,.sheet .grid th.kw,.dk-w{color:var(--witC)}
+.badge.ok{border-color:#000;background:#fff}
+.badge.na{border-color:#000;background:#fff}
+.crit th{text-align:left;text-align-last:auto;padding-left:1em!important}
+/* 表題(h1)・中表題(h2)以外は標準の太さ（グラフ含む） */
+.sheet *:not(h1):not(h2){font-weight:400!important}
+.sheet h2 .h2sub,.sheet h2 .colopt,.sheet h2 .colopt *{font-weight:400!important}
+</style>
+</head>
+<body>
+
+<nav class="tabs">
+  <button data-mode="info" onclick="setMode('info')">① 基本情報</button>
+  <button data-mode="measure" onclick="setMode('measure')">② 測定値入力</button>
+  <button data-mode="sheet" onclick="setMode('sheet')">③ 記録表・印刷</button>
+</nav>
+
+<section class="infoPanel" id="infoPanel">
+  <h2 class="ip-h">基本情報</h2>
+  <div class="ip-grid">
+    <label>工事名<input data-m="koji" placeholder="〇〇橋 塗装工事"></label>
+    <label>請負者<input data-m="ukeoi" placeholder="〇〇建設株式会社"></label>
+    <label>塗装系<select data-m="tosoukei" id="sysSel" onchange="onSysChange()"></select></label>
+    <label>測定時点<select id="jitenSel" onchange="onJitenChange()"></select>
+      <input data-m="jiten" id="jitenFree" placeholder="測定時点を入力" style="display:none;margin-top:6px"></label>
+    <label>対象部材<input data-m="buzai" placeholder="例：G1〜G3 主桁 外面"></label>
+    <label>測定年月日<input data-m="date" type="date"></label>
+    <label class="em">標準膜厚（μm）<input data-m="hyojun" inputmode="numeric" placeholder="例：250"></label>
+    <label>気温（℃）<input data-m="kion" inputmode="decimal"></label>
+    <label>湿度（%）<input data-m="shitsudo" inputmode="decimal"></label>
+    <label><span class="rolesel">
+        <select data-m="kakuninRole" id="roleSel"><option>品質確認者</option><option>社内検査員</option><option value="-">-（なし）</option></select></span>
+      <input data-m="kakunin" placeholder="氏名"></label>
+    <label>測定者<input data-m="sokutei" placeholder="氏名"></label>
+  </div>
+  <div class="ip-foot">
+    <span class="ip-note" id="ipNote">塗装系と測定時点を選ぶと、標準膜厚（その時点までの目標膜厚の合計）が自動で入ります。手で書き換えることもできます。</span>
+    <button class="btn primary big" onclick="setMode('measure')">測定値入力へ →</button>
+  </div>
+
+  <details class="sysEd" id="sysEd">
+    <summary>塗装系の確認・登録・編集</summary>
+    <div class="se-top">
+      <label>塗装系名 <input id="seName" placeholder="例：Rc-III（〇〇橋）"></label>
+      <button class="btn" onclick="seLoad()">選択中の塗装系を読み込む</button>
+    </div>
+    <table class="seTbl">
+      <thead><tr><th style="width:120px">工程</th><th>塗料名</th><th style="width:110px">膜厚/回 μm</th><th style="width:50px"></th></tr></thead>
+      <tbody id="seBody"></tbody>
+    </table>
+    <div class="se-btns">
+      <button class="btn" onclick="seAdd()">＋ 工程を追加</button>
+      <button class="btn primary" onclick="seSave()">この内容で登録</button>
+      <button class="btn danger" onclick="seDelete()">この塗装系を削除</button>
+    </div>
+    <p class="se-note">工程名に「ミストコート」など膜厚を数えない工程は、膜厚を0（空欄）にしてください。同じ工程名が続く場合（下塗2回など）は1回ずつ行を分けて入れます。
+      登録した塗装系はこのiPadに保存され、選択肢に追加されます（標準の塗装系と同じ名前で登録すると上書きされます）。</p>
+  </details>
+</section>
+
+<div class="ctx" id="ctx"></div>
+
+<div class="toolbar">
+  <button class="btn primary pdfbtn" onclick="doPrint()">PDF保存・印刷</button>
+  <button class="btn" onclick="exportJSON()">データ保存</button>
+  <button class="btn noro" onclick="document.getElementById('fileIn').click()">データ読込</button>
+  <input type="file" id="fileIn" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+  <button class="btn noro" onclick="clearReadings()">測定値のみクリア</button>
+  <button class="btn danger noro" onclick="clearAll()">全てクリア</button>
+  <span class="saved" id="savedMsg"></span>
+</div>
+<div class="rohint">③記録表は確認・印刷用です（ここでは修正できません）。修正は「①基本情報」または「②測定値入力」で行ってください。</div>
+<div class="help mhelp">
+  🎤を押して「125、132、118…」と区切って読み上げると、黄色のマスから順に入ります。
+  「取り消し」で1つ戻る／「次」で右のマスへ（空けて進む）／「次の点」で次のNo.へ／「ストップ」で終了。マスをタップすれば、そこから入力再開できます。「テンキー」ボタンで画面テンキーの表示／非表示を切り替えられます（数字を押して「確定→」で次のマスへ）。
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="head">
+    <h1>塗膜厚測定検査記録</h1>
+  </div>
+
+  <div class="top">
+    <div class="infos">
+      <table class="info">
+        <tr><th>工事名</th><td><input data-k="koji" placeholder="〇〇橋 塗装工事"></td></tr>
+        <tr><th>請負者</th><td><input data-k="ukeoi" placeholder="〇〇建設株式会社"></td></tr>
+        <tr><th>測定時点</th><td><input data-k="jiten" list="jitenList" placeholder="例：上塗り後（総膜厚）"></td></tr>
+        <tr><th>対象部材</th><td><input data-k="buzai" placeholder="例：G1〜G3 主桁 外面"></td></tr>
+        <tr><th>測定年月日</th><td class="datecell"><span id="dateTxt"></span><input data-k="date" type="date" class="dateIn"></td></tr>
+      </table>
+      <table class="info info2">
+        <tr><th>標準膜厚</th><td class="hyojun"><div class="unit"><input data-k="hyojun" inputmode="numeric" placeholder="例：250"><span>μm</span></div></td></tr>
+        <tr><th>気温</th><td><div class="unit"><input data-k="kion" inputmode="decimal"><span>℃</span></div></td></tr>
+        <tr><th>湿度</th><td><div class="unit"><input data-k="shitsudo" inputmode="decimal"><span>%</span></div></td></tr>
+        <tr><th id="roleTh">品質確認者</th><td><input data-k="kakunin" placeholder="氏名"><input type="hidden" data-k="kakuninRole"><input type="hidden" data-k="tosoukei"></td></tr>
+        <tr><th>測定者</th><td><input data-k="sokutei" placeholder="氏名"></td></tr>
+      </table>
+    </div>
+    <div class="ftop">
+      <h2 class="fh2">平均値 X 及び標準偏差 S</h2>
+      <div class="formula">
+        <div class="frow">
+          <span class="flbl">平均値</span>
+          <math class="fm"><mi>X</mi><mo>=</mo>
+            <mfrac><mn>1</mn><mi>N</mi></mfrac>
+            <munderover><mo movablelimits="false" largeop="true">∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
+            <mi>X</mi><mi>i</mi></math>
+          <span class="fval">＝ <b id="fX">—</b> μm</span>
+        </div>
+        <div class="frow">
+          <span class="flbl">標準偏差</span>
+          <math class="fm"><mi>S</mi><mo>=</mo>
+            <msqrt><mrow><mo stretchy="true">[</mo>
+              <mfrac><mn>1</mn><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></mfrac>
+              <munderover><mo movablelimits="false" largeop="true">∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
+              <msup><mrow><mo>(</mo><mi>X</mi><mo>−</mo><mi>X</mi><mi>i</mi><mo>)</mo></mrow><mn>2</mn></msup>
+            <mo stretchy="true">]</mo></mrow></msqrt></math>
+          <span class="fval">＝ <b id="fS">—</b> μm</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <datalist id="jitenList">
+    <option value="防食下地後"><option value="下塗り後"><option value="中塗り後"><option value="上塗り後（総膜厚）">
+  </datalist>
+
+  <div class="body">
+    <div class="side">
+      <h2>度数分布</h2>
+      <table class="freq">
+        <thead><tr><th>膜厚（Xi）のクラス</th><th>中央値</th><th>チェック</th><th>度数 Fi</th></tr></thead>
+        <tbody id="freqBody"></tbody>
+      </table>
+
+      <h2>ヒストグラム</h2>
+      <div class="histbox"><div id="hist"></div></div>
+
+      <h2 class="jh">判定<span class="judge"><span>総合判定</span><span id="badge" class="badge na">未判定</span></span></h2>
+      <div class="jrow">
+        <table class="crit">
+          <tr><th>① 平均値 X ≧ T×90%</th><td class="v"><span id="sAvg">—</span> ≧ <span id="c1">—</span></td><td id="r1" class="res-na">—</td></tr>
+          <tr><th>② 最小値 ≧ T×70%</th><td class="v"><span id="sMin">—</span> ≧ <span id="c2">—</span></td><td id="r2" class="res-na">—</td></tr>
+          <tr><th>③ 標準偏差 S ≦ T×20%</th><td class="v"><span id="sSd">—</span> ≦ <span id="c3">—</span></td><td id="r3" class="res-na">—</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="main">
+      <h2 style="display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px">測定値
+        <span class="colopt">表示する欄：
+          <label><input type="checkbox" id="optS" checked onchange="setCols()"> <span class="roleAb">社検</span></label>
+          <label><input type="checkbox" id="optW" checked onchange="setCols()"> 立会</label>
+          <input type="hidden" data-k="showS"><input type="hidden" data-k="showW">
+        </span>
+        <span class="h2sub" style="margin-left:auto;padding-right:4px">単位：μm</span></h2>
+      <table class="grid">
+        <thead id="gridHead"></thead>
+        <tbody id="gridBody"></tbody>
+        <tfoot class="bikoFoot">
+          <tr><th colspan="2" rowspan="3" class="bk-h">備考</th><td class="bk" colspan="23"><div class="bk-row"><span class="bk-lbl">立会値等記入箇所</span><input data-k="biko1" class="bk-in" placeholder="立会値などを記入"></div></td></tr>
+          <tr><td class="bk" colspan="23"><input data-k="biko2" class="bk-in"></td></tr>
+          <tr><td class="bk" colspan="23"><input data-k="biko3" class="bk-in"></td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="tenkey" id="tenkey">
+  <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="bs" class="fn">⌫</button>
+  <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="clr" class="fn">クリア</button>
+  <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="ent" class="ent">確定<br>→</button>
+  <button data-k="0" class="z">0</button><button data-k=".">.</button>
+</div>
+<div class="dock">
+  <button class="mic" id="micBtn" onclick="toggleVoice()" aria-label="音声入力">🎤</button>
+  <div class="dinfo">
+    <div class="dpos" id="dPos">No.<b>1</b> の <b>1</b> 回目</div>
+    <div class="dheard" id="dHeard">マイクを押して数値を読み上げてください</div>
+  </div>
+  <div class="dlast" id="dLast"></div>
+  <button class="dbtn" id="tkBtn" onclick="toggleTenkey()">テンキー</button>
+  <button class="dbtn" onclick="undo()">取消</button>
+  <button class="dbtn" onclick="skipNext()">次へ →</button>
+</div>
+
+<script>
+const NPT = 25, NREP = 5, KEY = 'tomakuatsu_v2';
+let cursor = 0;
+let history = [];
+
+/* ---------- build ---------- */
+// 各回・合計・平均を「測定(m)／社検又は品確(s)／立会(w)」の3列で持つ
+const KINDS=['m','s','w'], KNAME={m:'実測',s:'社検',w:'立会'};
+let ckind='m';
+const gb = document.getElementById('gridBody');
+(function(){
+  let h1='<tr><th rowspan="2" class="no">No.</th><th rowspan="2">測定位置</th>';
+  let h2='<tr>';
+  const hf=t=>`<div class="fit"><span class="fitv hfit">${t}</span></div>`;
+  const sub=()=>`<th class="sub km g0">${hf('実測')}</th><th class="sub ks">${hf('<span class="roleAb">社検</span>')}</th><th class="sub kw">${hf('立会')}</th>`;
+  for(let c=1;c<=NREP;c++){ h1+=`<th colspan="3" class="g0 grp">${c}</th>`; h2+=sub(); }
+  h1+=`<th colspan="3" class="g0 grp">合計</th><th colspan="3" class="g0 grp">平均 Xi</th><th rowspan="2" class="g0 dvh">${hf('X−Xi')}</th><th rowspan="2" class="dvh">${hf('(X−Xi)<sup>2</sup>')}</th></tr>`; h2+=sub()+sub()+'</tr>';
+  document.getElementById('gridHead').innerHTML=h1+h2;
+  const cg=document.createElement('colgroup'); cg.id='gridCols';
+  document.querySelector('.grid').prepend(cg);
+})();
+for(let r=0;r<NPT;r++){
+  let h = `<tr><td class="no">${r+1}</td><td class="pos"><div class="fit"><input data-k="pos${r}" class="fitin"></div></td>`;
+  for(let c=0;c<NREP;c++){
+    const i=r*NREP+c;
+    KINDS.forEach((k,j)=>{ h += `<td class="m k${k}${j===0?' g0':''}" id="td${k}${i}"><div class="fit"><input id="${k}${i}" class="fitin" data-i="${i}" data-kind="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off"></div></td>`; });
+  }
+  KINDS.forEach((k,j)=>{ h += `<td class="tot k${k}${j===0?' g0':''}" id="sum${k}${r}"></td>`; });
+  KINDS.forEach((k,j)=>{ h += `<td class="${k==='m'?'avg':'avgx'} k${k}${j===0?' g0':''}" id="${k==='m'?'avg':'avg'+k}${r}"></td>`; });
+  h += `<td class="dev g0" id="dev${r}"></td><td class="dev" id="devq${r}"></td></tr>`;
+  gb.insertAdjacentHTML('beforeend',h);
+}
+const cell = i => document.getElementById('m'+i);
+const cellK = (k,i) => document.getElementById(k+i);
+const fld = k => document.querySelector(`[data-k="${k}"]`);
+
+/* ---------- storage ---------- */
+function collect(){
+  const d={f:{},m:[],s:[],w:[]};
+  document.querySelectorAll('[data-k]').forEach(e=>d.f[e.dataset.k]=e.value);
+  for(let i=0;i<NPT*NREP;i++) KINDS.forEach(k=>d[k].push(cellK(k,i).value));
+  d.cursor=cursor; d.ckind=ckind; return d;
+}
+function apply(d){
+  if(!d) return;
+  document.querySelectorAll('[data-k]').forEach(e=>{ if(d.f && d.f[e.dataset.k]!==undefined) e.value=d.f[e.dataset.k]; });
+  KINDS.forEach(k=>{ for(let i=0;i<NPT*NREP;i++) cellK(k,i).value = (d[k]&&d[k][i]!=null)? d[k][i] : ''; });
+  setCursor(typeof d.cursor==='number'?d.cursor:firstEmpty(), d.ckind||'m');
+  if(d.f&&d.f.biko&&!d.f.biko1&&!d.f.biko2){ const L=String(d.f.biko).split('\n'); ['biko1','biko2','biko3'].forEach((k,j)=>fld(k).value=L[j]||''); }
+  if(typeof fillSysSel==='function') fillSysSel();
+  if(typeof setCols==='function') setCols(true);
+}
+let saveT=null;
+function save(){
+  clearTimeout(saveT);
+  saveT=setTimeout(()=>{
+    try{ localStorage.setItem(KEY, JSON.stringify(collect()));
+      document.getElementById('savedMsg').textContent='自動保存 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
+  },300);
+}
+function load(){ try{ const s=localStorage.getItem(KEY); if(s) apply(JSON.parse(s)); }catch(e){} }
+
+function exportJSON(){
+  const f=collect().f;
+  const name=`塗膜厚測定_${f.date||'日付なし'}_${f.buzai||''}_${f.jiten||''}.json`.replace(/[\\/:*?"<>|\s]/g,'_');
+  const blob=new Blob([JSON.stringify(collect(),null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function importJSON(inp){
+  const f=inp.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ apply(JSON.parse(rd.result)); history=[]; recalc(); save(); uiAlert('データを読み込みました'); }catch(e){ uiAlert('読み込めませんでした'); } };
+  rd.readAsText(f); inp.value='';
+}
+async function clearReadings(){
+  if(!await uiConfirm('測定値（実測・社検/品確・立会）と測定位置を消去します。<br>基本情報と備考は残ります。よろしいですか？','消去する')) return;
+  for(let i=0;i<NPT*NREP;i++) KINDS.forEach(k=>cellK(k,i).value='');
+  for(let r=0;r<NPT;r++) fld('pos'+r).value='';
+  history=[]; setCursor(0,'m'); recalc(); save();
+}
+async function clearAll(){
+  if(!await uiConfirm('基本情報・測定値・備考など、全ての入力を消去します。<br>よろしいですか？','全て消去')) return;
+  document.querySelectorAll('[data-k]').forEach(e=>e.value='');
+  for(let i=0;i<NPT*NREP;i++) KINDS.forEach(k=>cellK(k,i).value='');
+  fld('date').value=today();
+  history=[]; setCursor(0,'m'); fillSysSel(); recalc(); save();
+}
+function showDate(){ const v=fld('date').value; const m=v.match(/^(\d{4})-(\d{2})-(\d{2})$/); document.getElementById('dateTxt').textContent=m?`${m[1]}年${+m[2]}月${+m[3]}日`:''; }
+function today(){ const t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
+
+/* ---------- calc ---------- */
+const num = v => { const s=String(v).trim(); if(s==='') return null; const n=parseFloat(s); return isFinite(n)?n:null; };
+const fmt = (v,d=1) => v==null?'—':(Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toFixed(d);
+
+function pointAvgs(){
+  const out=[];
+  for(let r=0;r<NPT;r++){ let s=0,k=0; for(let c=0;c<NREP;c++){const v=num(cell(r*NREP+c).value); if(v!=null){s+=v;k++;}} out.push(k?{a:s/k,k}:null); }
+  return out;
+}
+function recalc(){
+  if(typeof fitAll==='function') fitAll();
+  showDate(); if(typeof syncInfoFromSheet==='function') syncInfoFromSheet(); if(typeof showRole==='function') showRole();
+  const T=num(fld('hyojun').value); const has=T!=null&&T>0;
+  for(let r=0;r<NPT;r++) KINDS.forEach(k=>{
+    let sm=0,c=0; for(let j=0;j<NREP;j++){ const v=num(cellK(k,r*NREP+j).value); if(v!=null){sm+=v;c++;} }
+    fitText(document.getElementById('sum'+k+r), c? fmt(sm,1).replace(/\.0$/,'') : '');
+    if(k!=='m') fitText(document.getElementById('avg'+k+r), c? fmt(sm/c) : '');
+  });
+  const pa=pointAvgs(); const pts=[];
+  pa.forEach((p,r)=>{
+    const td=document.getElementById('avg'+r);
+    if(!p){ fitText(td,''); td.classList.remove('low'); return; }
+    fitText(td, fmt(p.a)+(p.k<NREP?'*':''));
+    td.title=p.k<NREP?`${p.k}回分の平均`:'';
+    const low=has&&p.a<T*0.7;
+    td.classList.toggle('low',low);
+    pts.push(p.a);
+  });
+  const n=pts.length;
+  const mean=n?pts.reduce((x,y)=>x+y,0)/n:null;
+  const mn=n?Math.min(...pts):null, mx=n?Math.max(...pts):null;
+  const sd=n>1?Math.sqrt(pts.reduce((s,x)=>s+(x-mean)*(x-mean),0)/(n-1)):null;
+  pa.forEach((p,r)=>{ const d=(p&&mean!=null)? mean-p.a : null;
+    fitText(document.getElementById('dev'+r), d==null?'':fmt(Math.abs(d),1));
+    fitText(document.getElementById("devq"+r), d==null?'':fmt(d*d,1)); });
+  const $=id=>document.getElementById(id);
+  $('sAvg').textContent=fmt(mean); $('fX').textContent=fmt(mean); $('fS').textContent=fmt(sd,2); $('sMin').textContent=fmt(mn); $('sSd').textContent=fmt(sd,2);
+  $('c1').textContent=has?fmt(T*0.9):'—'; $('c2').textContent=has?fmt(T*0.7):'—'; $('c3').textContent=has?fmt(T*0.2):'—';
+  const set=(id,st,txt)=>{const e=$(id); e.className='res-'+st; e.textContent=txt;};
+  let r1=null,r2=null,r3=null;
+  if(has&&n){ r1=mean>=T*0.9; r2=mn>=T*0.7; }
+  if(has&&sd!=null){ r3=sd<=T*0.2||mean>T; }
+  set('r1',r1==null?'na':(r1?'ok':'ng'),r1==null?'—':(r1?'合格':'不合格'));
+  set('r2',r2==null?'na':(r2?'ok':'ng'),r2==null?'—':(r2?'合格':'不合格'));
+  if(r3!=null&&sd>T*0.2&&mean>T) set('r3','ok','適用外');
+  else set('r3',r3==null?'na':(r3?'ok':'ng'),r3==null?'—':(r3?'合格':'不合格'));
+  const b=$('badge');
+  // 25点未満でも判定する（③は2点以上で判定）
+  if(r1==null||r2==null){ b.className='badge na'; b.textContent='未判定'; }
+  else if(r1&&r2&&(r3==null||r3)){ b.className='badge ok'; b.textContent='合格'; }
+  else { b.className='badge ng'; b.textContent='不合格'; }
+  drawChart(pa.map(p=>p?p.a:null), has?T:null, mean);
+}
+function niceWidth(lo,hi){
+  for(const w of [10,20,25,50,100,200]){ const st=Math.floor(lo/w)*w; if(Math.floor((hi-st)/w)+1<=12) return w; }
+  return 500;
+}
+function freqDist(vals,T){
+  if(!vals.length) return null;
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  const w=10;
+  // 最小値のクラスの3段階下 ～ 最大値のクラスの3段階上
+  let w2=w; while(((Math.floor(hi/w2)+3)-(Math.floor(lo/w2)-3)+1)>22 && w2<1000) w2*=2;  // 行数が多すぎる場合は階級幅を広げる
+  const st=(Math.floor(lo/w2)-3)*w2;
+  let k=(Math.floor(hi/w2)+3)-(Math.floor(lo/w2)-3)+1;
+  if(k>40){ k=40; }
+  const bins=Array.from({length:k},(_,j)=>({a:st+j*w2,b:st+(j+1)*w2,n:0}));
+  vals.forEach(v=>{ let j=Math.floor((v-st)/w2); j=Math.max(0,Math.min(k-1,j)); bins[j].n++; });
+  return {w:w2,st,bins};
+}
+function drawChart(pts,T,mean){
+  const vals=pts.filter(v=>v!=null), fd=freqDist(vals,T);
+  // table
+  const tb=document.getElementById('freqBody'); let h=''; let cum=0;
+  if(fd){
+    fd.bins.forEach(bn=>{ cum+=bn.n;
+      const low=T&&bn.b<=T*0.7;
+      const tally=bn.n?('/'.repeat(bn.n).match(/.{1,5}/g).join(' ')):'';
+      h+=`<tr class="${low?'low':''}"><td class="cls">${bn.a} ～ ${bn.b-1}</td><td>${bn.a+fd.w/2}</td><td class="tally">${tally}</td><td>${bn.n}</td></tr>`; });
+  } else h='<tr><td colspan="4" style="color:var(--sub);padding:8px">測定値を入力すると表示されます</td></tr>';
+  tb.innerHTML=h;
+  tb.parentElement.classList.toggle('dense', !!fd && fd.bins.length>14);
+  // bar chart (HTML): 縦軸 度数F / 横軸 膜厚Xi — 枠いっぱいに伸縮
+  const box=document.getElementById('hist');
+  if(!fd){ box.innerHTML='<div class="hempty">測定値を入力すると表示されます</div>'; return; }
+  const maxN=Math.max(...fd.bins.map(b=>b.n),1); const top=Math.max(maxN+1,4);
+  const stepN=top>12?5:top>6?2:1;
+  let grid='', bars='', xl='';
+  for(let n=0;n<=top;n+=stepN){ const y=n/top*100;
+    grid+=`<div class="hg" style="bottom:${y}%"></div><div class="hy" style="bottom:${y}%">${n}</div>`; }
+  fd.bins.forEach(bn=>{
+    const low=T&&bn.b<=T*0.7;
+    bars+=`<div class="hc">${bn.n?`<div class="hb${low?' low':''}" style="height:${bn.n/top*100}%"></div>`:''}</div>`;
+    xl+=`<div class="hx">${bn.a}～<br>${bn.b-1}</div>`;
+  });
+  box.innerHTML=`<div class="hyl">度<br>数<br>Fi</div>
+    <div class="hplot"><div class="hyax">${grid}</div><div class="hbars">${bars}</div></div>
+    <div></div><div class="hxl">${xl}</div>
+    <div></div><div class="hxt">膜厚 Xi（μm）</div>`;
+}
+
+/* ---------- cursor ---------- */
+function firstEmpty(){ for(let i=0;i<NPT*NREP;i++) if(cell(i).value==='') return i; return NPT*NREP-1; }
+function kLabel(k){ return k==='s' ? roleAbbr() : KNAME[k]; }
+function setCursor(i,k){
+  if(k) ckind=k;
+  i=Math.max(0,Math.min(NPT*NREP-1,i));
+  document.querySelectorAll('.grid .m.cur').forEach(e=>e.classList.remove('cur'));
+  cursor=i; document.getElementById('td'+ckind+i).classList.add('cur'); tkFresh=true;
+  document.getElementById('dPos').innerHTML=`No.<b>${Math.floor(i/NREP)+1}</b> の <b>${i%NREP+1}</b> 回目 <span class="dk dk-${ckind}">${kLabel(ckind)}</span>`;
+}
+function scrollToCursor(){
+  const r=document.getElementById('td'+ckind+cursor).getBoundingClientRect();
+  if(r.top<60||r.bottom>window.innerHeight-110) window.scrollBy({top:r.top-window.innerHeight*0.4,behavior:'smooth'});
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener('input',e=>{
+  if(e.target.matches('.grid .m input')||e.target.matches('.unit input')){
+    e.target.value=e.target.value.replace(/[０-９．－]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0))
+      .replace(e.target.matches('.unit input')?/[^\d.\-]/g:/[^\d.]/g,'');
+  }
+  recalc(); save();
+});
+document.addEventListener('focusin',e=>{ if(e.target.dataset&&e.target.dataset.i!==undefined) setCursor(+e.target.dataset.i, e.target.dataset.kind); });
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.i!==undefined){
+    e.preventDefault(); const n=+e.target.dataset.i+1;
+    if(n<NPT*NREP) cellK(e.target.dataset.kind,n).focus(); else e.target.blur();
+  }
+});
+gb.addEventListener('pointerdown',e=>{
+  const td=e.target.closest('.m'); if(!td) return;
+  if(listening||tkOn){ e.preventDefault(); const inp=td.querySelector('input'); if(document.activeElement) document.activeElement.blur(); setCursor(+inp.dataset.i, inp.dataset.kind); }
+});
+
+/* ---------- voice ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null, listening=false, lastFinal='', lastFinalAt=0;
+const KD={'〇':0,'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'壱':1,'弐':2};
+function kanjiToNum(s){
+  let total=0,cur=0,seen=false;
+  for(const ch of s){
+    if(ch in KD){cur=cur*10+KD[ch];seen=true;}
+    else if(ch==='十'){total+=(cur||1)*10;cur=0;seen=true;}
+    else if(ch==='百'){total+=(cur||1)*100;cur=0;seen=true;}
+    else if(ch==='千'){total+=(cur||1)*1000;cur=0;seen=true;}
+  }
+  return seen?String(total+cur):s;
+}
+function parseNumbers(text){
+  let t=text.normalize('NFKC');
+  t=t.replace(/[〇零一二三四五六七八九十百千壱弐]+/g,m=>' '+kanjiToNum(m)+' ');
+  t=t.replace(/(\d)\s*(点|てん|ポイント)\s*(\d)/g,'$1.$3');
+  t=t.replace(/(\d),(\d{3})(?!\d)/g,'$1$2');
+  const out=[];
+  (t.match(/\d+(\.\d+)?/g)||[]).forEach(s=>{
+    if(!s.includes('.')&&s.length>=5&&s.length%3===0){ for(let k=0;k<s.length;k+=3) out.push(s.slice(k,k+3)); }
+    else out.push(s);
+  });
+  return out.map(parseFloat).filter(v=>isFinite(v)&&v>0&&v<3000);
+}
+function handleText(text){
+  const raw=text.trim(); if(!raw) return;
+  document.getElementById('dHeard').textContent='「'+raw+'」';
+  const t=raw.normalize('NFKC');
+  if(/取り?消|戻して|もどして|削除|消して|間違/.test(t)){ undo(); return; }
+  if(/ストップ|終了|停止|止めて|とめて/.test(t)){ stopVoice(); return; }
+  if(/次の点|つぎのてん/.test(t)){ skipPoint(); return; }
+  if(/^(次|つぎ|スキップ|飛ばし)/.test(t)){ skipNext(); return; }
+  parseNumbers(t).forEach(putValue);
+}
+function putValue(v){
+  const i=cursor, k=ckind; cellK(k,i).value=String(v); history.push(k+':'+i);
+  document.getElementById('dLast').textContent=v;
+  flash(i); recalc(); save();
+  if(i<NPT*NREP-1) setCursor(i+1); else document.getElementById('dHeard').textContent='全125マス入力しました';
+  scrollToCursor();
+}
+function flash(i){ const td=document.getElementById('td'+ckind+i); td.style.transition='none'; td.style.background='#b9f0c6';
+  setTimeout(()=>{ td.style.transition='background .8s'; td.style.background=''; },60); }
+function undo(){
+  let k=ckind, i=cursor-1;
+  if(history.length){ const h=history.pop().split(':'); k=h[0]; i=+h[1]; }
+  if(i<0) return;
+  cellK(k,i).value=''; setCursor(i,k); recalc(); save();
+  document.getElementById('dLast').textContent='取消'; scrollToCursor();
+}
+function skipNext(){ if(cursor<NPT*NREP-1){ setCursor(cursor+1); scrollToCursor(); } }
+function skipPoint(){ const r=Math.floor(cursor/NREP); if(r<NPT-1){ setCursor((r+1)*NREP); scrollToCursor(); } }
+function toggleVoice(){ listening?stopVoice():startVoice(); }
+function startVoice(){
+  if(!SR){ uiAlert('このブラウザは音声認識に対応していません。\niPadのキーボードのマイクボタン（音声入力）でも入力できます。'); return; }
+  document.activeElement&&document.activeElement.blur();
+  listening=true; document.getElementById('micBtn').classList.add('on');
+  document.getElementById('dHeard').textContent='聞き取り中…';
+  startRec(); scrollToCursor();
+}
+function startRec(){
+  rec=new SR(); rec.lang='ja-JP'; rec.continuous=false; rec.interimResults=true; rec.maxAlternatives=1;
+  rec.onresult=e=>{
+    for(let k=e.resultIndex;k<e.results.length;k++){
+      const r=e.results[k], tx=r[0].transcript;
+      if(r.isFinal){
+        const now=Date.now();
+        if(tx===lastFinal&&now-lastFinalAt<1500) continue;
+        lastFinal=tx; lastFinalAt=now; handleText(tx);
+      } else document.getElementById('dHeard').textContent='… '+tx;
+    }
+  };
+  rec.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){ stopVoice(); uiAlert('マイクの使用が許可されていません。設定 > Safari > マイク を確認してください。'); }
+    else if(e.error==='network'){ stopVoice(); document.getElementById('dHeard').textContent='通信エラー：電波の良い場所で再試行するか、テンキーで入力してください'; }
+  };
+  rec.onend=()=>{ if(listening) setTimeout(()=>{ if(listening){ try{startRec();}catch(_){} } },150); };
+  try{ rec.start(); }catch(_){}
+}
+function stopVoice(){
+  listening=false; document.getElementById('micBtn').classList.remove('on');
+  try{ rec&&rec.abort(); }catch(_){}
+  if(document.getElementById('dHeard').textContent.startsWith('聞き取り')) document.getElementById('dHeard').textContent='停止しました';
+}
+
+/* ---------- 画面切替・基本情報 ---------- */
+function setMode(m){
+  const ro=(m==='sheet');
+  document.querySelectorAll('.sheet input, .sheet select').forEach(e=>{ if(e.type==='hidden') return; if(e.type==='date') e.disabled=ro; else e.readOnly=ro; });
+  if(ro&&document.activeElement) document.activeElement.blur();
+  ['info','measure','sheet'].forEach(x=>document.body.classList.toggle('m-'+x,x===m));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  if(m!=='measure'&&listening) stopVoice();
+  try{ localStorage.setItem(KEY+'_mode',m); }catch(e){}
+  syncInfoFromSheet(); updateCtx(); window.scrollTo(0,0);
+}
+function syncInfoFromSheet(){ document.querySelectorAll('[data-m]').forEach(e=>{ const f=fld(e.dataset.m); if(f&&document.activeElement!==e) e.value=f.value; }); }
+document.addEventListener('input',e=>{
+  const k=e.target.dataset&&e.target.dataset.m; if(!k) return;
+  const f=fld(k); if(f){ f.value=e.target.value; } recalc(); save(); updateCtx();
+},true);
+function updateCtx(){
+  const g=k=>(fld(k).value||'').trim();
+  const T=g('hyojun');
+  document.getElementById('ctx').innerHTML=
+    `<span><b>工事名</b>${g('koji')||'—'}</span><span><b>対象部材</b>${g('buzai')||'—'}</span><span><b>測定時点</b>${g('jiten')||'—'}</span>`+
+    `<span><b>標準膜厚</b>${T?T+' μm':'<em style="color:var(--ng)">未入力（①基本情報で入力）</em>'}</span>`;
+}
+
+/* ---------- 塗装系（鋼道路橋防食便覧の標準膜厚） ---------- */
+// t: 1回あたりの目標膜厚(μm)。0はミストコート等、膜厚に数えない工程
+const SYS_PRESET={
+ 'C-5（新設・一般外面）':[
+   {k:'防食下地',p:'無機ジンクリッチペイント',t:75},
+   {k:'ミストコート',p:'変性エポキシ樹脂塗料下塗',t:0},
+   {k:'下塗',p:'変性エポキシ樹脂塗料下塗',t:120},
+   {k:'中塗',p:'ふっ素樹脂塗料用中塗',t:30},
+   {k:'上塗',p:'ふっ素樹脂塗料上塗',t:25}],
+ 'A-5（新設・一般外面）':[
+   {k:'下塗',p:'鉛・クロムフリーさび止めペイント',t:35},
+   {k:'下塗',p:'鉛・クロムフリーさび止めペイント',t:35},
+   {k:'中塗',p:'長油性フタル酸樹脂塗料中塗',t:30},
+   {k:'上塗',p:'長油性フタル酸樹脂塗料上塗',t:25}],
+ 'D-5（新設・内面）':[
+   {k:'下塗',p:'変性エポキシ樹脂塗料内面用',t:120},
+   {k:'下塗',p:'変性エポキシ樹脂塗料内面用',t:120}],
+ 'F-11（C-5 高力ボルト連結部・スプレー）':[
+   {k:'防食下地',p:'無機ジンクリッチペイント',t:75},
+   {k:'ミストコート',p:'変性エポキシ樹脂塗料下塗',t:0},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:300},
+   {k:'中塗',p:'ふっ素樹脂塗料用中塗',t:30},
+   {k:'上塗',p:'ふっ素樹脂塗料上塗',t:25}],
+ 'F-11（C-5 高力ボルト連結部・はけ／ローラー）':[
+   {k:'防食下地',p:'無機ジンクリッチペイント',t:75},
+   {k:'ミストコート',p:'変性エポキシ樹脂塗料下塗',t:0},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:150},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:150},
+   {k:'中塗',p:'ふっ素樹脂塗料用中塗',t:30},
+   {k:'上塗',p:'ふっ素樹脂塗料上塗',t:25}],
+ 'F-12（D-5 高力ボルト連結部・スプレー）':[
+   {k:'防食下地',p:'無機ジンクリッチペイント',t:75},
+   {k:'ミストコート',p:'変性エポキシ樹脂塗料下塗',t:0},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:300}],
+ 'F-12（D-5 高力ボルト連結部・はけ／ローラー）':[
+   {k:'防食下地',p:'無機ジンクリッチペイント',t:75},
+   {k:'ミストコート',p:'変性エポキシ樹脂塗料下塗',t:0},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:150},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:150}],
+ 'F-13（C-5 溶接部・スプレー）':[
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:75},
+   {k:'下塗',p:'変性エポキシ樹脂塗料下塗',t:60},
+   {k:'下塗',p:'変性エポキシ樹脂塗料下塗',t:60},
+   {k:'中塗',p:'ふっ素樹脂塗料用中塗',t:30},
+   {k:'上塗',p:'ふっ素樹脂塗料上塗',t:25}],
+ 'F-13（C-5 溶接部・はけ／ローラー）':[
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:37.5},
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:37.5},
+   {k:'下塗',p:'変性エポキシ樹脂塗料下塗',t:60},
+   {k:'下塗',p:'変性エポキシ樹脂塗料下塗',t:60},
+   {k:'中塗',p:'ふっ素樹脂塗料用中塗',t:30},
+   {k:'上塗',p:'ふっ素樹脂塗料上塗',t:25}],
+ 'F-14（D-5 溶接部・スプレー）':[
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:75},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:300}],
+ 'F-14（D-5 溶接部・はけ／ローラー）':[
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:37.5},
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:37.5},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:150},
+   {k:'下塗',p:'超厚膜形エポキシ樹脂塗料',t:150}],
+ 'Rc-I（塗替え・素地調整1種）':[
+   {k:'防食下地',p:'有機ジンクリッチペイント',t:75},
+   {k:'下塗',p:'弱溶剤形変性エポキシ樹脂塗料下塗',t:60},
+   {k:'下塗',p:'弱溶剤形変性エポキシ樹脂塗料下塗',t:60},
+   {k:'中塗',p:'弱溶剤形ふっ素樹脂塗料用中塗',t:30},
+   {k:'上塗',p:'弱溶剤形ふっ素樹脂塗料上塗',t:25}],
+};
+const SYS_KEY=KEY+'_sys';
+function userSys(){ try{ return JSON.parse(localStorage.getItem(SYS_KEY)||'{}'); }catch(e){ return {}; } }
+function allSys(){ return Object.assign({}, SYS_PRESET, userSys()); }
+// 測定時点の候補（各工程完了時点の累計膜厚）
+function stagesOf(steps){
+  const out=[]; let sum=0; const cnt={}, tot={};
+  steps.forEach(st=>{ if(st.t>0) tot[st.k]=(tot[st.k]||0)+1; });
+  steps.forEach((st,i)=>{
+    if(!(st.t>0)) return;
+    sum+=st.t; cnt[st.k]=(cnt[st.k]||0)+1;
+    let label = tot[st.k]>1 ? `${st.k}${cnt[st.k]}回目後` : `${st.k}後`;
+    const last = steps.slice(i+1).every(x=>!(x.t>0));
+    if(last) label += '（総膜厚）';
+    out.push({label, T:sum});
+  });
+  return out;
+}
+function fillSysSel(){
+  const sel=document.getElementById('sysSel'), cur=fld('tosoukei').value;
+  const names=Object.keys(allSys());
+  sel.innerHTML='<option value="">（選択してください）</option>'+names.map(n=>`<option>${n}</option>`).join('')+'<option value="__free">その他（手入力）</option>';
+  sel.value = names.includes(cur)||cur==='__free' ? cur : '';
+  fillJitenSel();
+}
+function fillJitenSel(){
+  const sysName=document.getElementById('sysSel').value, js=document.getElementById('jitenSel'), free=document.getElementById('jitenFree');
+  const steps=allSys()[sysName];
+  const cur=fld('jiten').value;
+  if(!steps){
+    js.style.display = sysName==='__free' ? 'none':'';
+    js.innerHTML='<option value="">（先に塗装系を選択）</option>';
+    free.style.display = sysName==='__free' ? '' : 'none';
+    return;
+  }
+  free.style.display='none'; js.style.display='';
+  const sts=stagesOf(steps);
+  js.innerHTML='<option value="">（選択してください）</option>'+sts.map(x=>`<option value="${x.label}">${x.label}　…　${x.T} μm</option>`).join('');
+  js.value = sts.some(x=>x.label===cur) ? cur : '';
+}
+function onSysChange(){
+  const v=document.getElementById('sysSel').value;
+  fld('tosoukei').value=v;
+  if(v!=='__free'){ fld('jiten').value=''; fld('hyojun').value=''; }
+  fillJitenSel();
+  recalc(); save(); updateCtx();
+}
+function onJitenChange(){
+  const steps=allSys()[document.getElementById('sysSel').value]; if(!steps) return;
+  const x=stagesOf(steps).find(s=>s.label===document.getElementById('jitenSel').value);
+  fld('jiten').value = x? x.label : '';
+  if(x) fld('hyojun').value = x.T;
+  recalc(); save(); updateCtx();
+}
+// 役職切替
+document.addEventListener('change',e=>{ if(e.target.id==='roleSel'){ fld('kakuninRole').value=e.target.value; recalc(); save(); } });
+function roleAbbr(){ const r=fld('kakuninRole').value||'品質確認者'; return r==='社内検査員'?'社検':(r==='-'?'社検･品確':'品確'); }
+function showRole(){ const r=fld('kakuninRole').value||'品質確認者'; document.querySelectorAll('.roleAb').forEach(e=>e.textContent=roleAbbr()); document.body.classList.toggle('role-s', r==='社内検査員'); const dk=document.querySelector('.dk-s'); if(dk) dk.textContent=roleAbbr(); document.getElementById('roleTh').textContent=r; const none=(r==='-'); document.querySelectorAll('[data-m="kakunin"],[data-k="kakunin"]').forEach(e=>{ if(none&&e.value) e.value=''; e.disabled=none; e.placeholder=none?'':'氏名'; }); const rs=document.getElementById('roleSel'); if(rs&&document.activeElement!==rs) rs.value=r; }
+
+/* 塗装系エディタ */
+function seRow(st){ return `<tr><td><input value="${st.k||''}" placeholder="下塗"></td><td><input value="${st.p||''}" placeholder="塗料名"></td><td class="n"><input inputmode="numeric" value="${st.t||''}"></td><td><button class="btn" style="padding:6px 10px" onclick="this.closest('tr').remove();seSum()">✕</button></td></tr>`; }
+function seRender(steps){ document.getElementById('seBody').innerHTML=steps.map(seRow).join(''); seSum(); }
+function seRead(){ return [...document.querySelectorAll('#seBody tr')].map(tr=>{ const i=tr.querySelectorAll('input'); return {k:i[0].value.trim(),p:i[1].value.trim(),t:num(i[2].value)||0}; }).filter(x=>x.k); }
+function seSum(){ const st=seRead(); let t=st.reduce((a,b)=>a+(b.t||0),0); let f=document.querySelector('.seTbl tfoot'); if(!f){ f=document.createElement('tfoot'); document.querySelector('.seTbl').appendChild(f);} f.innerHTML=`<tr><td colspan="2">合計（総膜厚）</td><td>${t} μm</td><td></td></tr>`; }
+function seLoad(){ const n=document.getElementById('sysSel').value; const st=allSys()[n];
+  document.getElementById('seName').value = st? n : ''; seRender(st||[{k:'防食下地'},{k:'下塗'},{k:'中塗'},{k:'上塗'}]); }
+function seAdd(){ document.getElementById('seBody').insertAdjacentHTML('beforeend',seRow({})); }
+function seSave(){
+  const n=document.getElementById('seName').value.trim(); const st=seRead();
+  if(!n){ uiAlert('塗装系名を入力してください'); return; } if(!st.length){ uiAlert('工程を入力してください'); return; }
+  const u=userSys(); u[n]=st; try{ localStorage.setItem(SYS_KEY,JSON.stringify(u)); }catch(e){}
+  fld('tosoukei').value=n; fillSysSel(); onSysChange(); uiAlert('「'+n+'」を登録しました');
+}
+async function seDelete(){
+  const n=document.getElementById('seName').value.trim(); const u=userSys();
+  if(!u[n]){ uiAlert(SYS_PRESET[n]?'標準の塗装系は削除できません（同じ名前で登録すると上書きできます）':'登録されていない塗装系です'); return; }
+  if(!await uiConfirm('「'+n+'」を削除しますか？','削除する')) return;
+  delete u[n]; try{ localStorage.setItem(SYS_KEY,JSON.stringify(u)); }catch(e){} fillSysSel();
+}
+document.addEventListener('input',e=>{ if(e.target.closest&&e.target.closest('#seBody')) seSum(); });
+
+window.addEventListener('pagehide',()=>{ try{ localStorage.setItem(KEY, JSON.stringify(collect())); }catch(e){} });
+function fitText(td,t){
+  let sp=td.querySelector('.fitv');
+  if(!sp){ td.innerHTML='<div class="fit"><span class="fitv"></span></div>'; sp=td.querySelector('.fitv'); }
+  sp.textContent=t; sp.style.setProperty('--n', Math.max(emWidth(t),3.0).toFixed(2));
+}
+/* ---------- 欄の表示切替 ---------- */
+function setCols(fromLoad){
+  const oS=document.getElementById('optS'), oW=document.getElementById('optW');
+  if(fromLoad){ oS.checked = fld('showS').value!=='0'; oW.checked = fld('showW').value!=='0'; }
+  const S=oS.checked, W=oW.checked;
+  fld('showS').value=S?'1':'0'; fld('showW').value=W?'1':'0';
+  document.body.classList.toggle('hide-s',!S); document.body.classList.toggle('hide-w',!W);
+  const per=1+(S?1:0)+(W?1:0);
+  document.querySelectorAll('#gridHead th.grp').forEach(th=>th.colSpan=per);
+  document.querySelector('#gridHead tr:nth-child(2)').classList.add('subrow');
+  document.querySelectorAll('#gridHead th[rowspan]').forEach(th=>th.rowSpan = per>1?2:1);
+  // No.・測定位置は常に同じ幅。1〜5・合計・平均は全て同じ幅
+  document.querySelectorAll('.bikoFoot td.bk').forEach(td=>td.colSpan=(NREP+2)*per+2);
+  document.getElementById('gridCols').innerHTML='<col class="c-no"><col class="c-pos">'+'<col>'.repeat((NREP+2)*per+2);
+  if((ckind==='s'&&!S)||(ckind==='w'&&!W)) setCursor(cursor,'m');
+  if(!fromLoad) save();
+}
+/* ---------- 文字幅に合わせて縮小（文字数→em幅） ---------- */
+function emWidth(t){ let w=0; for(const ch of t){ const c=ch.codePointAt(0);
+  w += (c<0x80) ? (/[.,:;\-]/.test(ch)?0.35:0.62) : (c>=0xFF61&&c<=0xFF9F ? 0.55 : 1.0); } return w; }
+function fitOne(inp){ inp.style.setProperty('--n', Math.max(emWidth(inp.value), inp.closest('.pos')?6:2.6).toFixed(2)); }
+function fitAll(){ document.querySelectorAll('input.fitin').forEach(fitOne); fitHeads(); }
+function fitHeads(){ document.querySelectorAll('.hfit').forEach(sp=>{ const t=sp.textContent; sp.style.setProperty('--n', Math.max(emWidth(t)+0.3,1.5).toFixed(2)); }); }
+document.addEventListener('input',e=>{ if(e.target.classList&&e.target.classList.contains('fitin')) fitOne(e.target); });
+
+/* ---------- 確認・お知らせ（ブラウザの確認ダイアログを使わない） ---------- */
+function uiConfirm(msg,okText){
+  return new Promise(res=>{
+    const ov=document.createElement('div'); ov.className='uiov';
+    ov.innerHTML=`<div class="uibox"><div class="uimsg">${msg}</div><div class="uibtns"><button class="btn" data-a="0">キャンセル</button><button class="btn danger-fill" data-a="1">${okText||'OK'}</button></div></div>`;
+    ov.addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.a; if(a===undefined&&e.target!==ov) return; ov.remove(); res(a==='1'); });
+    document.body.appendChild(ov);
+  });
+}
+function uiAlert(msg){
+  const t=document.createElement('div'); t.className='uitoast'; t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('out'),2600); setTimeout(()=>t.remove(),3100);
+}
+
+/* ---------- 印刷 ---------- */
+function doPrint(){
+  let framed=false; try{ framed = window.self!==window.top; }catch(e){ framed=true; }
+  if(framed){
+    uiConfirm('この画面（アプリ内のプレビュー）では印刷・PDF保存が使えない場合があります。<br>ファイルをダウンロードし、<b>Chrome・Edge・Safari などのブラウザで開いてから</b>「PDF保存・印刷」を押してください。<br><br>このまま印刷を試しますか？','印刷を試す').then(ok=>{ if(ok) try{ window.print(); }catch(e){} });
+    return;
+  }
+  try{ window.print(); }catch(e){ uiAlert('印刷画面を開けませんでした。ブラウザで開き直してください。'); }
+}
+
+/* ---------- オフライン対応（Service Worker） ---------- */
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+
+/* ---------- 画面テンキー ---------- */
+let tkOn=false, tkFresh=true;
+function toggleTenkey(on){
+  tkOn = (on===undefined) ? !tkOn : on;
+  document.body.classList.toggle('tk-on', tkOn);
+  document.getElementById('tkBtn').classList.toggle('on', tkOn);
+  document.querySelectorAll('.grid .m input').forEach(e=>e.setAttribute('inputmode', tkOn?'none':'decimal'));
+  if(tkOn && document.activeElement) document.activeElement.blur();
+  try{ localStorage.setItem(KEY+'_tk', tkOn?'1':'0'); }catch(e){}
+  if(tkOn) scrollToCursor();
+}
+document.getElementById('tenkey').addEventListener('pointerdown',e=>{
+  const b=e.target.closest('button'); if(!b) return; e.preventDefault();
+  const k=b.dataset.k, c=cellK(ckind,cursor); let v=c.value;
+  if(k==='ent'){ if(v!==''){ history.push(ckind+':'+cursor); flash(cursor); document.getElementById('dLast').textContent=v; }
+    if(cursor<NPT*NREP-1) setCursor(cursor+1); scrollToCursor(); return; }
+  if(k==='bs'){ v=tkFresh?'':v.slice(0,-1); }
+  else if(k==='clr'){ v=''; }
+  else if(k==='.'){ if(tkFresh) v='0.'; else if(!v.includes('.')) v=(v||'0')+'.'; }
+  else { v = tkFresh ? k : (v+k); if(v.replace('.','').length>6) return; }
+  tkFresh=false; c.value=v; fitOne(c); recalc(); save();
+  document.getElementById('dLast').textContent=v;
+});
+
+/* ---------- init ---------- */
+fld('date').value=today();
+setCursor(0); load(); fillSysSel(); setCols(true); fitAll(); recalc();
+try{ if(localStorage.getItem(KEY+'_tk')==='1') toggleTenkey(true); }catch(e){}
+(function(){ let m=null; try{ m=localStorage.getItem(KEY+'_mode'); }catch(e){}
+  if(!m) m = fld('hyojun').value ? 'measure' : 'info'; setMode(m); })();
+window.__test={parseNumbers,putValue,recalc};
+</script>
+</body>
+</html>
