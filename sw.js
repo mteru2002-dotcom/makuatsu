@@ -1,6 +1,6 @@
 // 塗膜厚測定検査記録 オフライン用キャッシュ
 // ファイルを更新したら VERSION を変えてください（例：v5 → v6）
-const VERSION = 'makuatsu-v5';
+const VERSION = 'makuatsu-v6';
 const FILES = ['./makuatsu.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

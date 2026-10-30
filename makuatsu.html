@@ -401,6 +401,11 @@ a.btn{text-decoration:none;display:inline-block}
 .hx{overflow:hidden}
 body.pdfmode .hx{font-size:8px!important}
 @media print{ #sheet.sheet{width:1054px!important;max-width:none!important;zoom:var(--pz,0.9);margin:0 auto!important} }
+.dictbar{display:none;position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));z-index:12;background:#fff8d6;border-top:2px solid #e0a800;padding:8px 12px;gap:8px;align-items:center}
+body.dict-on.m-measure .dictbar{display:flex}
+body.dict-on .tenkey{bottom:calc(150px + env(safe-area-inset-bottom))}
+.dictbar input{flex:1;font-size:18px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+@media print{.dictbar{display:none!important}}
 /* 文字は基本 黒 */
 .sheet{color:#000}
 .sheet th,.sheet td,.sheet input,.sheet select,.h2sub,.unit span,.hyojun input,.fval b,
@@ -602,6 +607,11 @@ body.pdfmode .hx{font-size:8px!important}
   <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="clr" class="fn">クリア</button>
   <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="ent" class="ent">確定<br>→</button>
   <button data-k="0" class="z">0</button><button data-k=".">.</button>
+</div>
+<div class="dictbar" id="dictbar">
+  <input id="dictIn" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ここで キーボードのマイク🎤 を押して「250、248、…」と読み上げ">
+  <button class="btn" onclick="commitDict()">入力</button>
+  <button class="btn" onclick="closeDict()">閉じる</button>
 </div>
 <div class="dock">
   <button class="mic" id="micBtn" onclick="toggleVoice()" aria-label="音声入力">🎤</button>
@@ -897,16 +907,24 @@ function undo(){
 }
 function skipNext(){ if(cursor<NPT*NREP-1){ setCursor(cursor+1); scrollToCursor(); } }
 function skipPoint(){ const r=Math.floor(cursor/NREP); if(r<NPT-1){ setCursor((r+1)*NREP); scrollToCursor(); } }
-function toggleVoice(){ listening?stopVoice():startVoice(); }
+function toggleVoice(){ if(dictOn){ closeDict(); return; } listening?stopVoice():startVoice(); }
+const isStandalone=!!(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches));
+const isIOSDev=/iP(ad|hone|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function startVoice(){
-  if(!SR){ uiAlert('このブラウザは音声認識に対応していません。\niPadのキーボードのマイクボタン（音声入力）でも入力できます。'); return; }
+  // ホーム画面アプリ(iPad)や非対応ブラウザでは音声認識が使えないため、キーボードの音声入力に切り替える
+  if(!SR || (isIOSDev && isStandalone)){ openDict(); return; }
   document.activeElement&&document.activeElement.blur();
   listening=true; document.getElementById('micBtn').classList.add('on');
-  document.getElementById('dHeard').textContent='聞き取り中…';
-  startRec(); scrollToCursor();
+  setHeard('マイク起動中…');
+  recStarted=false; startRec(); scrollToCursor();
+  clearTimeout(recGuard); recGuard=setTimeout(()=>{ if(listening&&!recStarted){ stopVoice(); openDict('音声認識が起動しませんでした。キーボードのマイクで入力してください。'); } },4000);
 }
+let recStarted=false, recGuard=null;
+function setHeard(t){ document.getElementById('dHeard').textContent=t; }
 function startRec(){
   rec=new SR(); rec.lang='ja-JP'; rec.continuous=false; rec.interimResults=true; rec.maxAlternatives=1;
+  rec.onstart=()=>{ recStarted=true; if(listening) setHeard('聞き取り中…（数値を読み上げてください）'); };
+  rec.onaudiostart=()=>{ recStarted=true; };
   rec.onresult=e=>{
     for(let k=e.resultIndex;k<e.results.length;k++){
       const r=e.results[k], tx=r[0].transcript;
@@ -914,21 +932,41 @@ function startRec(){
         const now=Date.now();
         if(tx===lastFinal&&now-lastFinalAt<1500) continue;
         lastFinal=tx; lastFinalAt=now; handleText(tx);
-      } else document.getElementById('dHeard').textContent='… '+tx;
+      } else setHeard('… '+tx);
     }
   };
   rec.onerror=e=>{
-    if(e.error==='not-allowed'||e.error==='service-not-allowed'){ stopVoice(); uiAlert('マイクの使用が許可されていません。設定 > Safari > マイク を確認してください。'); }
-    else if(e.error==='network'){ stopVoice(); document.getElementById('dHeard').textContent='通信エラー：電波の良い場所で再試行するか、テンキーで入力してください'; }
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){
+      stopVoice(); openDict('この画面では音声認識が使えません（'+e.error+'）。キーボードのマイクで入力してください。');
+    } else if(e.error==='network'){ stopVoice(); setHeard('通信エラー：電波の良い場所で再試行するか、テンキー／キーボードのマイクで入力してください'); }
+    else if(e.error!=='no-speech'&&e.error!=='aborted'){ setHeard('音声認識エラー：'+e.error); }
   };
   rec.onend=()=>{ if(listening) setTimeout(()=>{ if(listening){ try{startRec();}catch(_){} } },150); };
-  try{ rec.start(); }catch(_){}
+  try{ rec.start(); }catch(err){ stopVoice(); openDict('音声認識を開始できませんでした。キーボードのマイクで入力してください。'); }
 }
 function stopVoice(){
-  listening=false; document.getElementById('micBtn').classList.remove('on');
+  listening=false; clearTimeout(recGuard); document.getElementById('micBtn').classList.remove('on');
   try{ rec&&rec.abort(); }catch(_){}
-  if(document.getElementById('dHeard').textContent.startsWith('聞き取り')) document.getElementById('dHeard').textContent='停止しました';
+  if(/^(聞き取り|マイク起動)/.test(document.getElementById('dHeard').textContent)) setHeard('停止しました');
 }
+/* ---- キーボードの音声入力（iPadのキーボードのマイク）で数値を入れる ---- */
+let dictOn=false, dictT=null;
+function openDict(msg){
+  dictOn=true; document.body.classList.add('dict-on'); document.getElementById('micBtn').classList.add('on');
+  const f=document.getElementById('dictIn'); f.value='';
+  setHeard(msg||'下の欄が開いたら、キーボードのマイク🎤を押して数値を読み上げてください');
+  setTimeout(()=>f.focus(),50); scrollToCursor();
+}
+function closeDict(){
+  commitDict(); dictOn=false; document.body.classList.remove('dict-on'); document.getElementById('micBtn').classList.remove('on');
+  const f=document.getElementById('dictIn'); f.blur(); setHeard('停止しました');
+}
+function commitDict(){
+  clearTimeout(dictT); const f=document.getElementById('dictIn'); const t=f.value.trim(); if(!t) return;
+  f.value=''; handleText(t);
+}
+document.addEventListener('input',e=>{ if(e.target.id==='dictIn'){ clearTimeout(dictT); setHeard('… '+e.target.value); dictT=setTimeout(commitDict,1600); } });
+document.addEventListener('keydown',e=>{ if(e.target.id==='dictIn'&&e.key==='Enter'){ e.preventDefault(); commitDict(); } },true);
 
 /* ---------- 画面切替・基本情報 ---------- */
 function setMode(m){
@@ -938,6 +976,7 @@ function setMode(m){
   ['info','measure','sheet'].forEach(x=>document.body.classList.toggle('m-'+x,x===m));
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
   if(m!=='measure'&&listening) stopVoice();
+  if(m!=='measure'&&dictOn) closeDict();
   try{ localStorage.setItem(KEY+'_mode',m); }catch(e){}
   syncInfoFromSheet(); updateCtx(); window.scrollTo(0,0);
 }
