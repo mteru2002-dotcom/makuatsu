@@ -400,6 +400,7 @@ a.btn{text-decoration:none;display:inline-block}
 .hc,.hx{min-width:0}
 .hx{overflow:hidden}
 body.pdfmode .hx{font-size:8px!important}
+@media print{ #sheet.sheet{width:1054px!important;max-width:none!important;zoom:var(--pz,0.9);margin:0 auto!important} }
 /* 文字は基本 黒 */
 .sheet{color:#000}
 .sheet th,.sheet td,.sheet input,.sheet select,.h2sub,.unit span,.hyojun input,.fval b,
@@ -1146,10 +1147,22 @@ function uiAlert(msg){
 }
 
 /* ---------- 印刷 ---------- */
+// 印刷前：用紙の余白がブラウザごとに違っても A4横1枚に収まるよう縮小率を計算
+function preparePrint(){
+  try{
+    buildPdfCss(); document.body.classList.add('pdfmode');
+    const H=document.getElementById('sheet').getBoundingClientRect().height;
+    document.body.classList.remove('pdfmode');
+    const z=Math.min(0.915, 640/Math.max(H,1));   // 幅255mm・高さ170mm以内
+    document.documentElement.style.setProperty('--pz', z.toFixed(3));
+  }catch(e){ document.body.classList.remove('pdfmode'); }
+}
+window.addEventListener('beforeprint', preparePrint);
 function doPrint(){
+  preparePrint();
   let framed=false; try{ framed = window.self!==window.top; }catch(e){ framed=true; }
   if(framed){
-    uiConfirm('この画面（アプリ内のプレビュー）では印刷・PDF保存が使えない場合があります。<br>ファイルをダウンロードし、<b>Chrome・Edge・Safari などのブラウザで開いてから</b>「PDF保存・印刷」を押してください。<br><br>このまま印刷を試しますか？','印刷を試す').then(ok=>{ if(ok) try{ window.print(); }catch(e){} });
+    uiConfirm('この画面（アプリ内のプレビュー）では印刷・PDF保存が使えない場合があります。<br>ファイルをダウンロードし、<b>Chrome・Edge・Safari などのブラウザで開いてから</b>「印刷」を押してください。<br><br>このまま印刷を試しますか？','印刷を試す').then(ok=>{ if(ok) try{ window.print(); }catch(e){} });
     return;
   }
   try{ window.print(); }catch(e){ uiAlert('印刷画面を開けませんでした。ブラウザで開き直してください。'); }
