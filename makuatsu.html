@@ -67,7 +67,7 @@ h2{font-size:14px;margin:12px 0 5px;padding-left:8px;border-left:4px solid var(-
 .freq tfoot th,.freq tfoot td{background:#f3f5f7;font-weight:700}
 .freq tr.low td{color:#000}
 .histbox{border:1px solid var(--lineL);border-radius:4px}
-#hist{width:100%;height:100%;min-height:260px;display:grid;grid-template-columns:34px 1fr;grid-template-rows:1fr auto auto;padding:18px 10px 6px 0;box-sizing:border-box}
+#hist{width:100%;height:100%;min-height:260px;display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:1fr auto auto;padding:18px 10px 6px 0;box-sizing:border-box}
 .hempty{grid-column:1/3;align-self:center;text-align:center;color:#9aa5b1;font-size:13px}
 .hyl{align-self:center;text-align:center;font-weight:600;font-size:12px;line-height:1.25}
 .hplot{position:relative;margin-left:22px;border-left:1px solid #5b6675;border-bottom:1px solid #5b6675}
@@ -391,6 +391,15 @@ body.m-measure.tk-on .tenkey{display:grid}
 .dbtn.on{background:#2e7cd6}
 body.tk-on.m-measure .sheet{margin-bottom:340px}
 @media print{.tenkey{display:none!important}}
+svg.fsvg{display:block;height:3.1em;width:auto;overflow:visible}
+svg.fsvg text{fill:#000}
+@media print{ svg.fsvg{height:3.7em} }
+body.pdfmode .tabs,body.pdfmode .toolbar,body.pdfmode .rohint,body.pdfmode .help,body.pdfmode .dock,body.pdfmode .tenkey,body.pdfmode .ctx,body.pdfmode .infoPanel{display:none!important}
+body.pdfmode .sheet .top{display:grid!important} body.pdfmode .sheet .head{display:flex!important}
+a.btn{text-decoration:none;display:inline-block}
+.hc,.hx{min-width:0}
+.hx{overflow:hidden}
+body.pdfmode .hx{font-size:8px!important}
 /* 文字は基本 黒 */
 .sheet{color:#000}
 .sheet th,.sheet td,.sheet input,.sheet select,.h2sub,.unit span,.hyojun input,.fval b,
@@ -459,7 +468,8 @@ body.tk-on.m-measure .sheet{margin-bottom:340px}
 <div class="ctx" id="ctx"></div>
 
 <div class="toolbar">
-  <button class="btn primary pdfbtn" onclick="doPrint()">PDF保存・印刷</button>
+  <button class="btn primary pdfbtn" onclick="makePDF()">PDF保存</button>
+  <button class="btn pdfbtn" onclick="doPrint()">印刷</button>
   <button class="btn" onclick="exportJSON()">データ保存</button>
   <button class="btn noro" onclick="document.getElementById('fileIn').click()">データ読込</button>
   <input type="file" id="fileIn" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
@@ -470,7 +480,7 @@ body.tk-on.m-measure .sheet{margin-bottom:340px}
 <div class="rohint">③記録表は確認・印刷用です（ここでは修正できません）。修正は「①基本情報」または「②測定値入力」で行ってください。</div>
 <div class="help mhelp">
   🎤を押して「125、132、118…」と区切って読み上げると、黄色のマスから順に入ります。
-  「取り消し」で1つ戻る／「次」で右のマスへ（空けて進む）／「次の点」で次のNo.へ／「ストップ」で終了。マスをタップすれば、そこから入力再開できます。「テンキー」ボタンで画面テンキーの表示／非表示を切り替えられます（数字を押して「確定→」で次のマスへ）。
+  「取り消し」で1つ戻る／「次」で右のマスへ（空けて進む）／「次の点」で次のNo.へ／「ストップ」で終了。マスをタップすれば、そこから入力再開できます。数値は画面テンキー（数字を押して「確定→」で次のマスへ）又はマイクで入力します。
 </div>
 
 <div class="sheet" id="sheet">
@@ -500,20 +510,40 @@ body.tk-on.m-measure .sheet{margin-bottom:340px}
       <div class="formula">
         <div class="frow">
           <span class="flbl">平均値</span>
-          <math class="fm"><mi>X</mi><mo>=</mo>
-            <mfrac><mn>1</mn><mi>N</mi></mfrac>
-            <munderover><mo movablelimits="false" largeop="true">∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
-            <mi>X</mi><mi>i</mi></math>
+          <svg class="fsvg" viewBox="0 0 120 50" style="font-family:'Times New Roman',Times,serif">
+<text x="2" y="31" font-size="18" font-style="italic">X</text>
+<text x="17" y="31" font-size="17">=</text>
+<text x="38" y="22" font-size="13" text-anchor="middle">1</text>
+<line x1="31" y1="26" x2="45" y2="26" stroke="#000" stroke-width="1"/>
+<text x="38" y="40" font-size="13" text-anchor="middle" font-style="italic">N</text>
+<text x="58" y="35" font-size="25" text-anchor="middle">∑</text>
+<text x="58" y="10" font-size="9" text-anchor="middle" font-style="italic">N</text>
+<text x="58" y="49" font-size="9" text-anchor="middle"><tspan font-style="italic">i</tspan>=1</text>
+<text x="72" y="31" font-size="18" font-style="italic">Xi</text>
+</svg>
           <span class="fval">＝ <b id="fX">—</b> μm</span>
         </div>
         <div class="frow">
           <span class="flbl">標準偏差</span>
-          <math class="fm"><mi>S</mi><mo>=</mo>
-            <msqrt><mrow><mo stretchy="true">[</mo>
-              <mfrac><mn>1</mn><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></mfrac>
-              <munderover><mo movablelimits="false" largeop="true">∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
-              <msup><mrow><mo>(</mo><mi>X</mi><mo>−</mo><mi>X</mi><mi>i</mi><mo>)</mo></mrow><mn>2</mn></msup>
-            <mo stretchy="true">]</mo></mrow></msqrt></math>
+          <svg class="fsvg" viewBox="0 0 196 58" style="font-family:'Times New Roman',Times,serif">
+<text x="2" y="35" font-size="18" font-style="italic">S</text>
+<text x="16" y="35" font-size="17">=</text>
+<polyline points="32,34 36,31 42,52 49,5 193,5" fill="none" stroke="#000" stroke-width="1.1"/>
+<path d="M56 9 h-4 v44 h4" fill="none" stroke="#000" stroke-width="1.2"/>
+<text x="71" y="25" font-size="13" text-anchor="middle">1</text>
+<line x1="59" y1="29" x2="84" y2="29" stroke="#000" stroke-width="1"/>
+<text x="71" y="43" font-size="13" text-anchor="middle"><tspan font-style="italic">N</tspan> − 1</text>
+<text x="98" y="38" font-size="25" text-anchor="middle">∑</text>
+<text x="98" y="13" font-size="9" text-anchor="middle" font-style="italic">N</text>
+<text x="98" y="53" font-size="9" text-anchor="middle"><tspan font-style="italic">i</tspan>=1</text>
+<text x="111" y="35" font-size="17">(</text>
+<text x="118" y="35" font-size="18" font-style="italic">X</text>
+<text x="133" y="35" font-size="17">−</text>
+<text x="145" y="35" font-size="18" font-style="italic">Xi</text>
+<text x="166" y="35" font-size="17">)</text>
+<text x="172" y="24" font-size="11">2</text>
+<path d="M183 9 h4 v44 h-4" fill="none" stroke="#000" stroke-width="1.2"/>
+</svg>
           <span class="fval">＝ <b id="fS">—</b> μm</span>
         </div>
       </div>
@@ -579,7 +609,6 @@ body.tk-on.m-measure .sheet{margin-bottom:340px}
     <div class="dheard" id="dHeard">マイクを押して数値を読み上げてください</div>
   </div>
   <div class="dlast" id="dLast"></div>
-  <button class="dbtn" id="tkBtn" onclick="toggleTenkey()">テンキー</button>
   <button class="dbtn" onclick="undo()">取消</button>
   <button class="dbtn" onclick="skipNext()">次へ →</button>
 </div>
@@ -609,7 +638,7 @@ for(let r=0;r<NPT;r++){
   let h = `<tr><td class="no">${r+1}</td><td class="pos"><div class="fit"><input data-k="pos${r}" class="fitin"></div></td>`;
   for(let c=0;c<NREP;c++){
     const i=r*NREP+c;
-    KINDS.forEach((k,j)=>{ h += `<td class="m k${k}${j===0?' g0':''}" id="td${k}${i}"><div class="fit"><input id="${k}${i}" class="fitin" data-i="${i}" data-kind="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off"></div></td>`; });
+    KINDS.forEach((k,j)=>{ h += `<td class="m k${k}${j===0?' g0':''}" id="td${k}${i}"><div class="fit"><input id="${k}${i}" class="fitin" data-i="${i}" data-kind="${k}" inputmode="none" readonly tabindex="-1" autocomplete="off"></div></td>`; });
   }
   KINDS.forEach((k,j)=>{ h += `<td class="tot k${k}${j===0?' g0':''}" id="sum${k}${r}"></td>`; });
   KINDS.forEach((k,j)=>{ h += `<td class="${k==='m'?'avg':'avgx'} k${k}${j===0?' g0':''}" id="${k==='m'?'avg':'avg'+k}${r}"></td>`; });
@@ -800,15 +829,17 @@ document.addEventListener('input',e=>{
   recalc(); save();
 });
 document.addEventListener('focusin',e=>{ if(e.target.dataset&&e.target.dataset.i!==undefined) setCursor(+e.target.dataset.i, e.target.dataset.kind); });
+// PCの物理キーボード（数字・. ・BackSpace・Delete・Enter）もテンキーと同じ動作にする
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.i!==undefined){
-    e.preventDefault(); const n=+e.target.dataset.i+1;
-    if(n<NPT*NREP) cellK(e.target.dataset.kind,n).focus(); else e.target.blur();
-  }
+  if(!document.body.classList.contains('m-measure')) return;
+  const t=e.target; if(t&&((t.tagName==='INPUT'&&!t.readOnly)||t.tagName==='TEXTAREA'||t.tagName==='SELECT')) return;
+  const map={'Enter':'ent','Tab':'ent','Backspace':'bs','Delete':'clr','.':'.'};
+  let k = /^[0-9]$/.test(e.key) ? e.key : map[e.key];
+  if(!k) return; e.preventDefault(); tkPress(k);
 });
 gb.addEventListener('pointerdown',e=>{
   const td=e.target.closest('.m'); if(!td) return;
-  if(listening||tkOn){ e.preventDefault(); const inp=td.querySelector('input'); if(document.activeElement) document.activeElement.blur(); setCursor(+inp.dataset.i, inp.dataset.kind); }
+  { e.preventDefault(); const inp=td.querySelector('input'); if(document.activeElement) document.activeElement.blur(); setCursor(+inp.dataset.i, inp.dataset.kind); }
 });
 
 /* ---------- voice ---------- */
@@ -901,7 +932,7 @@ function stopVoice(){
 /* ---------- 画面切替・基本情報 ---------- */
 function setMode(m){
   const ro=(m==='sheet');
-  document.querySelectorAll('.sheet input, .sheet select').forEach(e=>{ if(e.type==='hidden') return; if(e.type==='date') e.disabled=ro; else e.readOnly=ro; });
+  document.querySelectorAll('.sheet input, .sheet select').forEach(e=>{ if(e.type==='hidden'||e.classList.contains('fitin')&&e.dataset.i!==undefined) return; if(e.type==='date') e.disabled=ro; else e.readOnly=ro; });
   if(ro&&document.activeElement) document.activeElement.blur();
   ['info','measure','sheet'].forEach(x=>document.body.classList.toggle('m-'+x,x===m));
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
@@ -1134,15 +1165,14 @@ let tkOn=false, tkFresh=true;
 function toggleTenkey(on){
   tkOn = (on===undefined) ? !tkOn : on;
   document.body.classList.toggle('tk-on', tkOn);
-  document.getElementById('tkBtn').classList.toggle('on', tkOn);
-  document.querySelectorAll('.grid .m input').forEach(e=>e.setAttribute('inputmode', tkOn?'none':'decimal'));
   if(tkOn && document.activeElement) document.activeElement.blur();
-  try{ localStorage.setItem(KEY+'_tk', tkOn?'1':'0'); }catch(e){}
   if(tkOn) scrollToCursor();
 }
 document.getElementById('tenkey').addEventListener('pointerdown',e=>{
-  const b=e.target.closest('button'); if(!b) return; e.preventDefault();
-  const k=b.dataset.k, c=cellK(ckind,cursor); let v=c.value;
+  const b=e.target.closest('button'); if(!b) return; e.preventDefault(); tkPress(b.dataset.k);
+});
+function tkPress(k){
+  const c=cellK(ckind,cursor); let v=c.value;
   if(k==='ent'){ if(v!==''){ history.push(ckind+':'+cursor); flash(cursor); document.getElementById('dLast').textContent=v; }
     if(cursor<NPT*NREP-1) setCursor(cursor+1); scrollToCursor(); return; }
   if(k==='bs'){ v=tkFresh?'':v.slice(0,-1); }
@@ -1151,12 +1181,87 @@ document.getElementById('tenkey').addEventListener('pointerdown',e=>{
   else { v = tkFresh ? k : (v+k); if(v.replace('.','').length>6) return; }
   tkFresh=false; c.value=v; fitOne(c); recalc(); save();
   document.getElementById('dLast').textContent=v;
-});
+}
+
+/* ---------- PDF作成（A4横1枚・端末内で作成／オフライン可） ---------- */
+function loadScript(src){ return new Promise((ok,ng)=>{ const sc=document.createElement('script'); sc.src=src; sc.onload=ok; sc.onerror=()=>ng(new Error(src)); document.head.appendChild(sc); }); }
+async function ensureLibs(){
+  if(!window.html2canvas) await loadScript('lib/html2canvas.min.js');
+  if(!(window.jspdf&&window.jspdf.jsPDF)) await loadScript('lib/jspdf.umd.min.js');
+}
+// 印刷用(@media print)のスタイルを body.pdfmode 用に複製
+let pdfCssDone=false;
+function buildPdfCss(){
+  if(pdfCssDone) return; pdfCssDone=true;
+  const scope=sel=>sel.split(',').map(x=>{ x=x.trim(); if(!x) return x;
+    if(/^html\b/.test(x)) x=x.replace(/^html/,'body');
+    if(/^body\b/.test(x)) return x.replace(/^body/,'body.pdfmode');
+    return 'body.pdfmode '+x; }).join(',');
+  let out='';
+  const walk=rules=>{ for(const r of rules){
+    if(r.type===CSSRule.MEDIA_RULE){ if(/print/.test(r.media.mediaText)){ for(const rr of r.cssRules){ if(rr.selectorText) out+=scope(rr.selectorText)+'{'+rr.style.cssText+'}\n'; } } }
+  } };
+  for(const ss of document.styleSheets){ try{ walk(ss.cssRules); }catch(e){} }
+  const st=document.createElement('style'); st.id='pdfCss';
+  st.textContent=out+'body.pdfmode .sheet{width:1054px!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important;border-radius:0!important}\n';
+  document.head.appendChild(st);
+}
+function pdfName(){ const g=k=>(fld(k).value||'').trim(); return (`塗膜厚測定_${g('date')||'日付なし'}_${g('buzai')}_${g('jiten')}`).replace(/[\\/:*?"<>|\s]+/g,'_').replace(/_+$/,'')+'.pdf'; }
+let pdfBusy=false;
+async function makePDF(){
+  if(pdfBusy) return; pdfBusy=true;
+  const wait=document.createElement('div'); wait.className='uiov'; wait.innerHTML='<div class="uibox"><div class="uimsg">PDFを作成しています…</div></div>'; document.body.appendChild(wait);
+  try{
+    await ensureLibs(); buildPdfCss();
+    if(document.activeElement) document.activeElement.blur();
+    document.body.classList.add('pdfmode');
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const sheet=document.getElementById('sheet');
+    const live=[...sheet.querySelectorAll('input,select')].map(el=>{ const cs=getComputedStyle(el); const r=el.getBoundingClientRect();
+      let t = el.tagName==='SELECT' ? (el.selectedOptions[0]?el.selectedOptions[0].text:'') : (el.type==='hidden'?null:el.value);
+      return {t,fs:cs.fontSize,ff:cs.fontFamily,ta:cs.textAlign,col:cs.color,pl:cs.paddingLeft,pr:cs.paddingRight,h:r.height,w:r.width,disp:cs.display}; });
+    const canvas=await html2canvas(sheet,{onclone:(doc)=>{ const cl=[...doc.getElementById('sheet').querySelectorAll('input,select')]; cl.forEach((el,i)=>{ const L=live[i]; if(!L) return; if(L.t===null||L.disp==='none'){ el.remove(); return; }
+        const sp=doc.createElement('div'); sp.textContent=L.t; sp.style.cssText=`font-size:${L.fs};font-family:${L.ff};text-align:${L.ta==='start'?'left':L.ta};color:${L.col};padding:0 ${L.pr} 0 ${L.pl};height:${L.h}px;line-height:${L.h}px;white-space:nowrap;overflow:hidden;box-sizing:border-box;width:100%;`;
+        if(el.parentNode&&el.parentNode.classList&&el.parentNode.classList.contains('unit')) sp.style.flex='1';
+        el.replaceWith(sp); }); },scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1280,windowHeight:900,scrollX:0,scrollY:-window.scrollY});
+    document.body.classList.remove('pdfmode');
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const maxW=279, maxH=187, top=17, left=9;
+    let w=maxW, h=canvas.height*maxW/canvas.width;
+    if(h>maxH){ const k=maxH/h; h=maxH; w=w*k; }
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',left+(maxW-w)/2,top,w,h);
+    const blob=pdf.output('blob'); const name=pdfName();
+    wait.remove();
+    showPdfReady(blob,name);
+  }catch(e){
+    document.body.classList.remove('pdfmode'); wait.remove();
+    uiAlert('PDFを作成できませんでした（'+(e&&e.message||e)+'）。「印刷」ボタンからお試しください。');
+  }finally{ pdfBusy=false; }
+}
+function showPdfReady(blob,name){
+  const file=new File([blob],name,{type:'application/pdf'});
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+  const url=URL.createObjectURL(blob);
+  const ov=document.createElement('div'); ov.className='uiov';
+  ov.innerHTML=`<div class="uibox"><div class="uimsg">PDFができました。<br><small>${name}</small></div><div class="uibtns" style="flex-wrap:wrap">
+    <button class="btn" data-a="close">閉じる</button>
+    <a class="btn" href="${url}" target="_blank" rel="noopener" data-a="open">開く</a>
+    ${canShare?'<button class="btn primary" data-a="share">保存・共有</button>':''}
+    <a class="btn primary" href="${url}" download="${name}" data-a="dl">ダウンロード</a></div>
+    ${canShare?'<div style="font-size:12px;color:#5b6675;margin-top:10px">iPad：「保存・共有」→「\"ファイル\"に保存」で保存できます。</div>':''}</div>`;
+  ov.addEventListener('click',async e=>{
+    const a=e.target.closest('[data-a]'); if(!a&&e.target!==ov) return;
+    const act=a?a.dataset.a:'close';
+    if(act==='share'){ e.preventDefault(); try{ await navigator.share({files:[file],title:name}); }catch(err){} return; }
+    if(act==='close'){ ov.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000); }
+  });
+  document.body.appendChild(ov);
+}
 
 /* ---------- init ---------- */
 fld('date').value=today();
 setCursor(0); load(); fillSysSel(); setCols(true); fitAll(); recalc();
-try{ if(localStorage.getItem(KEY+'_tk')==='1') toggleTenkey(true); }catch(e){}
+toggleTenkey(true);  /* 数値はテンキー又はマイクのみ */
 (function(){ let m=null; try{ m=localStorage.getItem(KEY+'_mode'); }catch(e){}
   if(!m) m = fld('hyojun').value ? 'measure' : 'info'; setMode(m); })();
 window.__test={parseNumbers,putValue,recalc};

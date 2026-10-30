@@ -1,7 +1,7 @@
 // 塗膜厚測定検査記録 オフライン用キャッシュ
 // ファイルを更新したら VERSION を変えてください（例：v2 → v3）
-const VERSION = 'makuatsu-v2';
-const FILES = ['./makuatsu.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+const VERSION = 'makuatsu-v3';
+const FILES = ['./makuatsu.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './lib/html2canvas.min.js', './lib/jspdf.umd.min.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
